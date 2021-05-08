@@ -84,6 +84,9 @@ found:
 	memset(p->context, 0, sizeof *p->context);
 	p->context->eip = (uint)forkret;
 
+	// setup the mailbox
+	initmailbox(&p->mbox);
+
 	return p;
 }
 
@@ -677,13 +680,14 @@ procdump(void)
 	static char *states[] = {
 	[UNUSED]    "unused\0",
 	[EMBRYO]    "embryo\0",
-	[SLEEPING]  "sleep\0\0",
+	[SLEEPING]  "sleep\0",
 	[RUNNABLE]  "runable",
-	[RUNNING]   "run\0\0\0",
+	[RUNNING]   "run\0",
 	[ZOMBIE]    "zombie\0",
 	[SUMODE]	"sumode\0",
 	[SULOCK]	"sulock\0",
-	[SURUN]		"surun\0\0",
+	[SURUN]		"surun\0",
+	[MSGWAIT]   "msgwait\0"
 	};
 	int i;
 	struct proc *p;
@@ -741,4 +745,85 @@ rerrstr(char *buf, int nbytes)
 	proc->errset = 0;
 	return 0;
 }
+	
+int
+findpid(int pid)
+{
+	int rpid = -1;
+	struct proc *p;
+	acquire(&ptable.lock);
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+		if(p->pid == pid && p->state != UNUSED)
+			if(p->pid == pid){
+				rpid = pid;
+				break;
+			}
+	release(&ptable.lock);
+	return rpid;
+}
 
+void
+initmailbox(Mailbox *mbox)
+{
+	mbox->lock = kmalloc(sizeof(struct spinlock));
+	initlock(mbox->lock, "mailbox");
+}
+
+int
+add_message(Mailbox *mbox, Message *m)
+{
+	
+	acquire(mbox->lock);
+	if(mbox->head == nil && mbox->tail == nil){
+		mbox->tail = mbox->head = m;
+		release(mbox->lock);
+		return 0;
+	}
+	mbox->tail->next = m;
+	mbox->tail = m;
+	release(mbox->lock);
+	return 0;
+}
+
+Message*
+rem_message(Mailbox *mbox)
+{
+	Message *m;
+	
+	acquire(mbox->lock);
+	if(mbox->head == nil){
+		release(mbox->lock);
+		return nil;
+	}
+	m = mbox->head;
+	if(mbox->head == mbox->tail)
+		mbox->head = mbox->tail = nil;
+	else
+		mbox->head = m->next;
+	m->next = nil;
+	release(mbox->lock);
+	return m;
+}
+
+Message*
+free_message(Message *m)
+{
+	Message *next;
+
+	next = m->next;
+	kmfree(m->data);
+	kmfree(m);
+	return next;
+}
+
+void
+flush_mailbox(Mailbox *mbox)
+{
+	Message *cur;
+
+	acquire(mbox->lock);
+	cur = mbox->head;
+	while(cur != nil)
+		cur = free_message(cur);
+	release(mbox->lock);
+}

@@ -1,4 +1,5 @@
 #include "errstr.h"  // NO! BAD VEETY! NO NO NO NO
+//#include "kmsg.h"
 // Segments in proc->gdt.
 #define NSEGS     7
 
@@ -50,6 +51,27 @@ struct context {
 	uint eip;
 };
 
+// in-kernel message passing
+
+typedef struct Message Message;
+typedef struct Mailbox Mailbox;
+
+struct Message {
+	uint size;
+	void *data;
+	Message *next;
+};
+
+struct Mailbox {
+	struct spinlock *lock;
+	Message *head;
+	Message *tail;
+};
+
+void            initmailbox(Mailbox*);
+int             add_message(Mailbox*, Message*);
+Message*        rem_message(Mailbox*);
+
 enum procstate { 
 	UNUSED,		// proc not in use
 	EMBRYO,		// proc not totally initialized
@@ -60,11 +82,9 @@ enum procstate {
 	SUMODE,		// user process that is runnable in sumode
 	SULOCK,		// user process that is sleeping in sumode
 	SURUN,		// user process that is running in sumode
+	MSGWAIT,    // process waiting to receive a message
 };
 enum proctype { PROCESS, THREAD };
-
-// the maximum number of child threads
-#define THREADMAX 32
 
 // Per-process state
 struct proc {
@@ -94,6 +114,7 @@ struct proc {
 	uint ssp;
 	uint threadi;
 	struct proc *threads[THREADMAX];	 // all child threads
+	Mailbox mbox;                // process mailbox
 };
 
 // Process memory is laid out contiguously, low addresses first:
