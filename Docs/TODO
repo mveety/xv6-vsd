@@ -1,0 +1,36 @@
+The real goal is to make VSD the development environment for VSD.
+
+
+Immediate todos for rel 1:
+	add devices /dev/console, /dev/null, /dev/zero (done)
+	implement some kernel config mechanism (in progress)
+		variable setting
+		hostnames
+	new bootloader (in progress, working)
+	add device files for devices (in progress)
+		uarts
+		boot disk
+	add auth to filesystem (in progress)
+	get kernel auth working (in progress)
+	add a few more utils (more, passwd, newuser, ed)
+	environment vars
+	improve shell (in progress)
+	implement veetymux (in progress)
+	implement shared memory threads (done)
+	implement named pipes
+	add some vfs capabilities
+
+For future releases:
+	installation mechanism
+	networking
+	more utilities (dd, df, etc)
+	self-hosting
+		remove gccisms from source
+		port a simple and small c compiler and assembler
+		port or implement ld, make (or mk), and ar (maybe the x86 port of v7?)
+		remove dependencies on tools
+	write new shell
+	filesystem utilities (mkfs, etc)
+	mounting (mount, unmount, bind syscalls and utils)
+	more filesystem support (fat32 and iso9660 are a must)
+

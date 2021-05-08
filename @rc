@@ -1,0 +1,5 @@
+devd
+sysctl singleuser 0
+sysctl sysuart 0
+login /dev/uart0
+

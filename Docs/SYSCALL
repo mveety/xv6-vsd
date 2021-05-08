@@ -1,0 +1,146 @@
+Veety Software Distribution System Call Documentation
+
+Notes:
+	Most, if not all, system calls return -1 and set errstr on
+	failure. Many of the system calls are privledged meaning only uid
+	-1 can execute them. Some kernel functions are not available as
+	system calls, and the ones that are are only like that because
+	they are either needed before devd starts, by devd, or are for
+	file, process, and usermanipulation. This list has all of the
+	defined system calls, but some currently do not function (like
+	chroot) or do not really have much of a use (chsystem).
+
+fork:
+	Fork creates a new process and copied the calling processes state
+	to the new process than continues execution in both from where the
+	fork was called. Fork returns 0 in the child and the child's pid
+	in the parent.
+
+exit:
+	Exit kills the calling process.
+
+wait:
+	Wait waits for a child to return and returns the pid of the child.
+	Returns -1 if the process has no children.
+
+pipe:
+	Pipe take an array of 2 ints and fills the array with
+	interconnected file descriptors.
+
+read:
+	Read takes an fid and buffer and fills the buffer with data from
+	that fid. Returns the amount of data read or -1 on an error.
+
+kill:
+	Kill takes a pid and kills that process. Returns 0 on success and
+	-1 on failure.
+
+exec:
+	Exec fills the calling process with a new process image. Never
+	returns on success and -1 on failure.
+
+fstat:
+	Gets information about a file based on given fid. Returns -1 on
+	failure.
+
+chdir:
+	Chdir changes the calling process's current directory. Returns -1
+	on failure.
+
+dup:
+	Dup makes a duplicate of a given fid. Returns the new fid on
+	success and -1 on failure.
+
+getpid:
+	Getpid returns the calling process's process id.
+
+sbrk:
+	Sbrk expands the current process's address space. Returns -1 on
+	failure.
+
+sleep:
+	Sleep causes the calling process to be skipped for execution for
+	about the specified length of time.
+
+uptime:
+	Returns how many ticks the system has been running for.
+
+open:
+	Open takes a filename and mode and returns a fid based on that
+	file. Return the fid or -1 on failure.
+
+write:
+	Write takes an fid and buffer and puts the data in that buffer
+	into the fid.
+
+mknod:
+	Mknod creates a device file. Returns -1 on failure.
+
+unlink:
+	Unlink deletes a file reference to an inode. Returns -1 on
+	failure.
+
+link:
+	Link creates a file reference to an inode. Returns -1 on failure.
+
+mkdir:
+	Mkdir creates a directory. Returns -1 on failure.
+
+close:
+	Close closes a fid. Returns -1 on failure.
+
+chuser:
+	Chuser changes the calling process's uid if the current uid is -1.
+	Returns -1 on failure.
+
+chsystem:
+	Chsystem changes the process group of the calling process if the
+	process is in group -1. Returns -1 on failure.
+
+disallow:
+	Disallow prevents processes that do not have uid -1 from running.
+	Returns -1 on failure.
+
+getuid:
+	Getuid returns the calling process's uid. Returns -1 on failure.
+
+getsid:
+	Getsid returns the calling process's group. Returns -1 on failure.
+
+getts:
+	Getts returns 1 if all processes can be run and 0 if only uid -1
+	processes can be run.
+
+chroot:
+	Chroot doesn't currently work.
+
+errstr:
+	Errstr either writes to or reads the current process's errstr.
+
+checkuser:
+	Checkuser returns 1 if the given password is for the given uid if
+	the calling process is uid -1. Returns 0 if there is no match and
+	-1 if there is a failure.
+
+finduser:
+	Finduser takes a uid or username and returns a username or uid if
+	the calling process is uid -1. Returns -1 on failure.
+
+moduser:
+	Moduser takes a uid and changes the password, lock status,
+	existance, or username of that user if the calling process is uid
+	-1. Returns -1 on failure.
+
+modfs:
+	Modfs mounts and unmounts filesystems. It takes a fs, operation
+	arg, and mount point for mount and a mountpoint and operation arg
+	for unmount. Returns -1 on failure and sets errstr.
+
+chanmsg:
+	Chanmsg sends messages on channels. It takes a cd, direction, and
+	value. Returns when msg is recieved or on error.
+
+modchan:
+	Modchan creates, opens, closes, and delete channels. It takes an
+	operation arg and a channel address. Returns a cd or -1 on error.
+

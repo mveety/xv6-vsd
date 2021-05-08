@@ -1,0 +1,7 @@
+This is the pre-release of the Veety software distribution. Please note
+that this is far from complete and has many bugs. If you find any issues
+please email mveety@gmail.com with something about VSD or xv6 in the
+subject.
+
+If you want to change this message, edit /etc/motd.
+

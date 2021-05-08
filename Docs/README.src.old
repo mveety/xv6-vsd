@@ -1,0 +1,30 @@
+Veety Software Distribution -- project to take xv6 farther
+
+New features:
+	Release 1:
+		Multiuser
+		Systems
+		Filesystem changes
+		Message Passing
+
+Feature: Multiuser
+	I added multuser support to xv6. The basic layout goes like: -1 is the 'system' user, -2 is the 'none' user, and >-1 are all other users. Security is enforced by only allowing uid -1 to change a processes uid and processes are limited only to changing their permission level. Permissions can only be lowered, never raised.
+
+	The multiuser patches also a kernel reenforced single user mode. Single user mode disallows processes to change systems, but allows them to change users with impunity. Also during single user mode non-system processes are effectively stopped to prevent logged in processes from doing any damage. The system (-1) user is able to enable or disable single user mode at will and at any time.
+
+	The 'none' user (-2) is a user thats unable to some system calls (like open, fork, exec, sbrk, kill, chdir, mknod, unlink, link, mkdir, chuser, chsystem, disallow, getts, and getsid) to hopefully mitigate the damage a comprimised process running as none can do.
+
+--------------------------------------------------------------------------
+Feature: Systems
+	Systems are groups of processes. There's one default system that is used on boot up and in normal interactive user, sid -1. This sid allows creation of systems by any process while also changing that process to uid -1 inside the system. When a process changes its system it is unable to change to a different system effectively jailing that process, while also giving that process in the system the rights of uid -1 so that it is able to run programs with privsep. Systems are unable to see or modify processes running outside that system, except for system sid -1 which is the "global system". 
+
+--------------------------------------------------------------------------
+Feature: Filesystem changes.
+	We added support for users and groups to the filesystem. The basic layout of the filesystem is slightly different from xv6 also. In the future, the filesystem will have settings to restrict systems to different directories.
+
+	We also ported mkfs to VSD so that a sysadmin is able to create new installations and format new disks without the help of an external machine.
+
+-------------------------------------------------------------------------
+Feature: Message passing
+	VSD has the ability for processes to communicate with each other and the kernel via a message passing interface. Priv'd processes are able to make new ports in the kernel, while most other processes are only able to connect to them. Once connected processes are able to send a receive messages to and from each other and to and from the kernel.
+

@@ -1,0 +1,15 @@
+xv6-vsd: The Veety Software Distribution
+Current Branch
+
+This is my unprofessional hackjob of xv6 to add features like users,
+multiple terminals, a better fs, etc. Its nowhere near the release 1
+goal. Currently it only *really* supports qemu and still uses the
+baroque booting method of xv6. Most of the changes have been pretty
+minor, but they make a big difference in features.
+
+Building:
+gmake all
+
+Running:
+gmake qemu
+

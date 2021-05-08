@@ -1,0 +1,14 @@
+vsd Threads Mess
+
+	vsd has two 'kind of' compatible threading mechanisms called tfork and clone. Both are accessed using the tfork syscall, and two sysctls configure the behaviour. tfork is the older (by a few days) of the two mechanisms (and the most naive and misguided). clone is the newer (and the simpler and better) mechanism.
+
+sysctls
+	Threading can be disabled completely using the 'allowthreads' sysctl. This sysctl is enabled by default because, in the default distribution, it is required for use. Because threading can be disabled completely, programs must be able to handle or abort gracefully when the syscall returns -1 with the errstr EKDISABLED.
+	clone is disabled by default, though there is no reason it can not be used by default. It is controlled via the 'useclone' sysctl. When this sysctl is enabled, clone replaces the tfork syscall but is still run using the tfork syscall. Assume that tfork is the 'thread create' syscall, no matter what the underlying mechanism is.
+
+tfork
+	tfork is the old thread creation process. It is the same as fork except that all of the parent process's *current* pages is shared other than the stack page. This means that if a page was owned by the parent before the tfork call the child thread will be able to access it. This also means that all new pages allocated to either the parent or child will not be shared between them. The child's file descriptor table is a copy of the parent's and also not shared.
+
+clone
+	clone is the new thread creation process. It is the same as tfork except the page directories are shared between the parent and the child meaning they both have access to all old and new pages. The file descriptor table is still copied and not shared between them, though this might change in the future.
+

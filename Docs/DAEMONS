@@ -1,0 +1,47 @@
+Veety Software Distribution Daemons explainations
+
+authd:
+	authd loads the passwd file into the kernel and keeps it up to
+	date by periodically reloading it. Authd also is what users
+	delegate to for password changes and other authentication related
+	operations. Authd is configured via /etc/security and the user
+	database it in /etc/passwd.
+
+mountd:
+	mountd reads the /etc/mounts file after devd is run to mount the
+	filesystems on boot and while the system is running by loading
+	/etc/mounts periodically. Users also delegate all mount operations
+	to mountd.
+
+devd: (done. not working.)
+	devd creates the device files in /dev by reading /etc/devices and
+	while the system is running by periodically reloading the file. On
+	system shutdown devd empties the /dev directory and when disabling
+	timesharing is deletes all of the devices except the ones needed.
+	Users also delegate starting and stopping drivers and creating
+	device files to devd.
+
+batchd:
+	batchd processes and keeps track of the run queue which users can
+	add programs to be run to. On start up it clears the old queue.
+	batchd is also what the administrative users must use to disable
+	and enable timesharing and batchd can enable and disable
+	timesharing based on a schedule. If a user *MUST* run something as
+	the system user, batchd handles the execution of that program for
+	that user.
+
+qmuxd:
+	qmuxd handles the logging in and out of users logged in from the
+	/dev/qmux* devices.
+
+init: (done. working.)
+	init runs the startup script then runs login on /dev/console.
+	After login is run, init murders orphan processes while the system
+	is up and timesharing is enabled.
+
+login: (mostly done. working.)
+	login authenticates users, creates a new session for them, and
+	cleans up their session after they're done. login can also run the
+	/users/$username/login.sh script if it exists instead of just a
+	new shell.
+

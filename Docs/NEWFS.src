@@ -1,0 +1,8 @@
+vsd new filesystem
+
+The new filesystem for VSD/xv6 has a very similar structure to the old filesystem except that all of the inode block addresses are indirect. The old filesystem has a file size limit of about 70 kilobytes, where as the new filesystem has a file size limit of around 768 kilobytes, which, for now, is plenty. The new filesystem has the added feature of permissions. The permissions model is similar to the code operating system, in that there there are no groups and the permissions are rather strict. The filesystem store the owner's uid and the owners permissions as well as everyone else's permissions. Currently the support permissions are Read, Write, Execute, Delete, and Hidden. Hidden files are a new and a departure from unix. They are not allowed to be opened if that bit is set. Files with the delete bit set are undeletable. Also: The hidden and delete permissions cannot be unset when the system is timesharing to help prevent potentially malicious changes, however they can be set while timesharing, keeping with the VSD policy of only letting the system get more secure while operating.
+
+New Files: tools/mkfs_vsd.c
+File changed: file.h file.c fs.h fs.c
+Old files: oldfs/*
+

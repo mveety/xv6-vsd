@@ -1,0 +1,48 @@
+VSD Terminal Multiplex
+
+VSD includes a specialized device that allows multiple users to connect to the system over a single serial port.
+
+The protocol:
+
+struct vmPacket {
+	byte header;
+	byte data;
+}
+
+The header contains two 4 bit fields:
+
+byte linenum = (vmPacket.header & 0xf0) >> 4;
+byte cmd = (vmPacket.header & 0x0f);
+
+linenum is the line number.
+cmd is the command. The commands:
+
+enum command {
+// 'general'
+	NOP = 0x00,
+// 'instructions'
+	CONNECT = 0x01,
+	DISCON = 0x02,
+	ACK = 0x03,
+	RESET = 0x4,
+	INIT = 0x5,
+	INFO = 0x6,
+	WRITE = 0x7,
+	READ = 0x8,
+// 'replies'
+	DATA = 0xD,
+	ERR = 0xF,
+}
+
+NOP does nothing.
+CONNECT tells the target that this line is now active. It takes no data.
+DISCON tells the target that this line is no longer active. It takes no data.
+ACK tells the target that the last command was accepted. It can take data.
+RESET currently does nothing
+INIT tells the target that a term mux is now active on this serial port
+INFO will have the server reply with an ACK and some data. INFO takes a register number as an argument.
+WRITE does implementation specific things to the target.
+READ does implementation specific things to the target.
+DATA tells the target to place the data into its output buffer.
+ERR tells the target about the results of the last command.
+

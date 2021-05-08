@@ -1,0 +1,5 @@
+# default passwd file. periodically copied by authd to /dev/auth
+# :username:uid:password
+:system:-1:system:
+:root:0:root:
+:guest:1:guest:

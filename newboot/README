@@ -1,0 +1,15 @@
+Veety Software Distribution -- New Bootloader README
+
+This is was the old xv6 bootloader. Its new now. mbrasm.S+mbrmain.c
+are the mbr part that read the filesystem superblock, parses the
+bootelf inode, and loads bootelf. It then jumps to bootelf which gives
+you the nice boot prompt and all that shit. bootelf give you the nice
+boot: prompt and takes your input, loads the kernel off of the desired
+device, and starts running it. bootelf has a simple command language.
+
+bootelf commands:
+	l[0-1] -- l loads a kernel off of device 0 or 1
+	b -- boots the kernel with the desired settings.
+	r[0-1] -- r sets the root device
+
+

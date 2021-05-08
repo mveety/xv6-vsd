@@ -1,0 +1,11 @@
+#!/usr/bin/env rc
+
+#for(i in `{ ls *.h *.c }){
+#	echo 'processing '^$i^'...'
+#	# unexpand -t 2 $i > convert/$i
+#	# do some perl bullshit because rsc and crew fucked up all the indenting.
+#	perl -pe 's/(^|\G) {2}/\t/g' < $i > convert/$i
+#}
+
+perl -pe 's/(^|\G) {2}/\t/g' < $1 > $2
+

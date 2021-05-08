@@ -1,0 +1,10 @@
+Veety Software Distribution -- Old Bootloader README
+
+This is the old xv6 bootloader. It fits in the mbr and loads an elf
+executable out of the first few sectors. This works well for a simple
+system, however it doesn't allow you to have the kernel in the
+filesystem or give the kernel boot parameters. This isn't ideal. For
+now, this is the only bootloader for VSD, but a new one will be in the
+works soon. This bootloader will never go away and most likely is
+enough for most people and should be considered the default.
+
