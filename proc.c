@@ -418,7 +418,7 @@ wait(void)
 			if(p->parent != proc)
 				continue;
 			havekids = 1;
-			if(p->state == ZOMBIE){
+			if(p->state == ZOMBIE && p->type == PROCESS){
 				// Found one.
 				pid = p->pid;
 				kfree(p->kstack);
@@ -429,7 +429,8 @@ wait(void)
 					kfree((char*)PTE_ADDR(p->stackpte));
 					kfree((char*)p->pgdir);
 				}
-				removechild(p->parent, p);
+				if(p->type == THREAD)
+					removechild(p->parent, p);
 				p->state = UNUSED;
 				p->pid = 0;
 				p->parent = 0;
@@ -470,12 +471,33 @@ scheduler(void)
 		for(;;)
 			hlt();
 	}
+
 	for(;;){
 		// Enable interrupts on this processor.
 		sti();
 		// Loop over process table looking for process to run.
 		acquire(&ptable.lock);
 		for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+
+			// cull zombie threads. parents don't get notified about their
+			// dead threads using wait, so might as well nuke them instead of
+			// keeping them around.
+			if(p->type == THREAD && p->state == ZOMBIE){
+				cprintf("cpu%d: thread %d culled\n", cpu->id, p->pid);
+				kfree(p->kstack);
+				p->kstack = 0;
+				if(!useclone){
+					kfree((char*)PTE_ADDR(p->stackpte));
+					kfree((char*)p->pgdir);
+				}
+				removechild(p->parent, p);
+				p->state = UNUSED;
+				p->pid = 0;
+				p->parent = 0;
+				p->name[0] = 0;
+				p->killed = 0;
+			}
+			
 			// so the scheduler runs as normal when not in singleuser.
 			// when the scheduler is in singleuser, non-system processes
 			// won't get executed and, if running, will get stopped. This
@@ -485,37 +507,9 @@ scheduler(void)
 			// processes from running, the system processes get higher
 			// priority and the other processes will not do anything
 			// unpredictable to the machine.
-			if(p->state == SUMODE && singleuser == 0){
-				p->state = RUNNABLE;
-				continue;
-			}
-			if(p->state == SULOCK && singleuser == 0){
-				p->state = SLEEPING;
-				continue;
-			}
-			if(p->state == SURUN && singleuser == 0){
-				p->state = RUNNING;
-				continue;
-			}
 			
-			if(p->uid != -1 && singleuser == 1){
-				if(p->state == RUNNABLE){
-					p->state = SUMODE;
-					cprintf("cpu%d: unable to exec proc %d (uid = %d) sumode\n",
-							cpu->id, p->pid, p->uid, p->sid);
-					continue;
-				} else if(p->state == RUNNING){
-					p->state = SURUN;
-					cprintf("cpu%d: unable to exec proc %d (uid = %d) sumode\n",
-							cpu->id, p->pid, p->uid, p->sid);
-					continue;
-				} else if(p->state == SLEEPING){
-					p->state = SULOCK;
-					cprintf("cpu%d: unable to exec proc %d (uid = %d) sumode\n",
-							cpu->id, p->pid, p->uid, p->sid);
-					continue;
-				}
-			}
+			if(p->uid != -1 && singleuser == 1)
+				continue;
 			
 			if(p->state != RUNNABLE)
 				continue;
@@ -684,10 +678,7 @@ procdump(void)
 	[RUNNABLE]  "runable",
 	[RUNNING]   "run\0",
 	[ZOMBIE]    "zombie\0",
-	[SUMODE]	"sumode\0",
-	[SULOCK]	"sulock\0",
-	[SURUN]		"surun\0",
-	[MSGWAIT]   "msgwait\0"
+	[MSGWAIT]   "msgwait\0",
 	};
 	int i;
 	struct proc *p;

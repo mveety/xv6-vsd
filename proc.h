@@ -76,13 +76,10 @@ enum procstate {
 	UNUSED,		// proc not in use
 	EMBRYO,		// proc not totally initialized
 	SLEEPING,	// zzzzzzz
+	MSGWAIT,    // process waiting to receive a message
 	RUNNABLE,	// can run next scheduler round
 	RUNNING,	// currently running
 	ZOMBIE,		// waiting for parent to wait()
-	SUMODE,		// user process that is runnable in sumode
-	SULOCK,		// user process that is sleeping in sumode
-	SURUN,		// user process that is running in sumode
-	MSGWAIT,    // process waiting to receive a message
 };
 enum proctype { PROCESS, THREAD };
 

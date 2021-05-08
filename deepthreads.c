@@ -60,6 +60,7 @@ int
 main(int argc, char *argv[])
 {
 	int proper = 0;
+	int longsleep = 0;
 
 	l1 = makelock(nil);
 	l2 = makelock(nil);
@@ -86,6 +87,10 @@ main(int argc, char *argv[])
 	if(argc == 2){
 		if(strcmp(argv[1], "-p") == 0)
 			proper = 1;
+		if(strcmp(argv[1], "-S") == 0){
+			proper = 1;
+			longsleep = 1;
+		}
 		if(strcmp(argv[1], "-h") == 0)
 			usage();
 	}
@@ -122,6 +127,8 @@ main(int argc, char *argv[])
 		sleep(10);
 	}
 	sleep(10);
+	if(longsleep)
+		sleep(60);
 	printf(1, "done.\n");
 	exit();
 }
