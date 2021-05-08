@@ -9,6 +9,8 @@
 // test errstrs
 #define EROBPIKE "he's a world class jackass"
 #define EAIJU "no."
+#define EMVEETY "what?"
+#define EIDKMAN "general error"
 
 // kernel/misc errors
 #define EKBADSYSCALL "system call does not exist or is not implemented"

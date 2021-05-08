@@ -2,6 +2,7 @@
 
 #include <libc.h>
 
+Lock *printlock;
 Lock *l1, *l2, *l3, *l4;
 void *c1stk, *c2stk, *c3stk, *c4stk;
 
@@ -10,9 +11,13 @@ gchildthread(Lock *l)
 {
 	int mypid = getpid();
 
+	lock(printlock);
 	printf(2, "deepthreads: child %d: waiting for parent's lock\n", mypid);
+	unlock(printlock);
 	lock(l);
+	lock(printlock);
 	printf(2, "deepthreads: child %d: exiting\n", mypid);
+	unlock(printlock);
 	exit();
 }
 
@@ -25,14 +30,22 @@ childthread(Lock *m, Lock *c, void *stk)
 		gchildthread(c);
 		break;
 	case -1:
+		lock(printlock);
 		printf(2, "deepthreads: could not create grandchild: %r\n");
+		unlock(printlock);
 		exit();
 	}
+	lock(printlock);
 	printf(2, "deepthreads: child %d: waiting for main lock\n", mypid);
+	unlock(printlock);
 	lock(m);
+	lock(printlock);
 	printf(2, "deepthreads: child %d: unlocking my child's lock\n", mypid);
+	unlock(printlock);
 	unlock(c);
+	lock(printlock);
 	printf(2, "deepthreads: child %d: exiting\n", mypid);
+	unlock(printlock);
 	exit();
 }
 
@@ -52,7 +65,8 @@ main(int argc, char *argv[])
 	l2 = makelock(nil);
 	l3 = makelock(nil);
 	l4 = makelock(nil);
-	if(!l1 || !l2 || !l3 || !l4){
+	printlock = makelock(nil);
+	if(!l1 || !l2 || !l3 || !l4 || !printlock){
 		printf(2, "could not create locks: %r\n");
 		exit();
 	}
@@ -80,7 +94,9 @@ main(int argc, char *argv[])
 		childthread(l1, l2, c2stk);
 		break;
 	case -1:
+		lock(printlock);
 		printf(2, "could not create child: %r\n");
+		unlock(printlock);
 		exit();
 	}
 	switch(clone((uint)c3stk)){
@@ -88,17 +104,24 @@ main(int argc, char *argv[])
 		childthread(l3, l4, c4stk);
 		break;
 	case -1:
+		lock(printlock);
 		printf(2, "could not create child: %r\n");
+		unlock(printlock);
 		exit();
 	}
+	lock(printlock);
 	printf(1, "test start\n");
+	unlock(printlock);
 	sleep(10);
 	if(proper){
+		lock(printlock);
 		printf(1, "unlocking\n");
+		unlock(printlock);
 		unlock(l1);
 		unlock(l3);
 		sleep(10);
 	}
+	sleep(10);
 	printf(1, "done.\n");
 	exit();
 }
