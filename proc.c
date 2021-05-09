@@ -392,8 +392,8 @@ exit(void)
 	}
 
 	// empty the mailbox
-	flush_mailbox(&proc->mbox);
-	kmfree(proc->mbox.lock);
+//	flush_mailbox(&proc->mbox);
+//	kmfree(proc->mbox.lock);
 	
 	acquire(&ptable.lock);
 	// Parent might be sleeping in wait().
@@ -665,7 +665,7 @@ kill(int pid)
 		if(p->pid == pid && checksysperms(p, proc) == 0){
 			p->killed = 1;
 			// Wake process from sleep if necessary.
-			if(p->state == SLEEPING)
+			if(p->state == SLEEPING || p->state == MSGWAIT)
 				p->state = RUNNABLE;
 			release(&ptable.lock);
 			return 0;
@@ -695,7 +695,7 @@ procdump(void)
 	struct proc *p;
 	char *state;
 
-	cprintf("\nPROCESS DUMP\npid: type, state, name, user, parent, threadi\n");
+	cprintf("\nPROCESS DUMP\npid: type, state, name, user, parent, threadi, killed\n");
 	if(halted)
 		cprintf("system halted, no processes running\n");
 	else {
@@ -710,7 +710,7 @@ procdump(void)
 			cprintf("%d: %s, %s, %s, %d, %d, %d\n", p->pid,
 					p->type == THREAD ? "thread" : "process", state,
 					p->name, p->uid, p->parent != nil ? p->parent->pid : 0,
-					p->threadi);
+					p->threadi, p->killed);
 		}
 	}
 }
@@ -776,6 +776,7 @@ add_message(Mailbox *mbox, Message *m)
 {
 	
 	acquire(mbox->lock);
+	m->next = nil;
 	if(mbox->head == nil && mbox->tail == nil){
 		mbox->tail = mbox->head = m;
 		release(mbox->lock);
@@ -838,7 +839,6 @@ precvwait(void)
 	uint hdsize = 0;
 	
 	mbox = &proc->mbox;
-
 	acquire(mbox->lock);
 	if(mbox->head == nil){
 		release(mbox->lock);

@@ -198,6 +198,8 @@ UPROGS=\
 	_clonetest\
 	_deepthreads\
 	_recvtest\
+	_sendtest\
+	_printer\
 
 fs.img: mkfs_vsd $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
 	./mkfs_vsd fs.img VSDSYS $(UPROGS) kernel.elf kernel.bin bootelf bootbin @passwd @devices @rc @motd

@@ -198,7 +198,8 @@ sys_sendmsg(void)
 
 	msg = kmalloc(sizeof(Message));
 	msg->size = size;
-	msg->data = msgdata;
+	msg->data = kmallocz(size);
+	memcpy(msg->data, msgdata, size);
 	psendmsg(p, msg);
 	return 0;
 }
