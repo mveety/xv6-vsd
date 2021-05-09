@@ -1,11 +1,13 @@
 #include "libc.h"
 
 extern int main(int argc, char *argv[]);
+extern void _vsd_threadstart(void);
 
 int
 _start(int argc, char *argv[])
 {
 	getuid();
+	_vsd_threadstart();
 	main(argc, argv);
 	exit();
 }

@@ -174,5 +174,8 @@ int unlock(Lock*);
 int canlock(Lock*);
 int canunlock(Lock*);
 
+// uthreads.c
+int spawn(void (*entry)(void*), void*);
+
 #endif
 

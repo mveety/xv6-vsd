@@ -306,9 +306,9 @@ clone(uint stack)
 	int pid;
 	struct proc *np;
 	char *mem;
-//	pte_t *pstack;
-//	uint oldstartsp;
-//	uint spoffset;
+	pte_t *pstack;
+	uint oldstartsp;
+	uint spoffset;
 	uint a, i;
 
 	fail(!allowthreads, EPNOTHREADS, -1);
@@ -321,14 +321,14 @@ clone(uint stack)
 	*np->tf = *proc->tf;
 
 	// copy the parent's stack to the new thread
-//	mem = (char*)stack;
-//	if((pstack = walkpgdir(proc->pgdir, (void*)proc->tf->esp, 0)) == 0)
-//		panic("clone: parent has no stack page");
-//	oldstartsp = PGROUNDUP(proc->tf->esp);
-//	spoffset = oldstartsp - proc->tf->esp;
-//	memmove(mem, (char*)p2v(PTE_ADDR(*pstack)), PGSIZE);
+	mem = (char*)stack;
+	if((pstack = walkpgdir(proc->pgdir, (void*)proc->tf->esp, 0)) == 0)
+		panic("clone: parent has no stack page");
+	oldstartsp = PGROUNDUP(proc->tf->esp);
+	spoffset = oldstartsp - proc->tf->esp;
+	memmove(mem, (char*)p2v(PTE_ADDR(*pstack)), PGSIZE);
 	proc->tf->esp = stack + PGSIZE;
-//	proc->tf->esp -= spoffset;
+	proc->tf->esp -= spoffset;
 
 	// clone parent's state
 	np->pgdir = proc->pgdir;
@@ -494,7 +494,6 @@ scheduler(void)
 			// dead threads using wait, so might as well nuke them instead of
 			// keeping them around.
 			if(p->type == THREAD && p->state == ZOMBIE){
-				cprintf("cpu%d: thread %d culled\n", cpu->id, p->pid);
 				kfree(p->kstack);
 				p->kstack = 0;
 				if(!useclone){

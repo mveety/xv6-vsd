@@ -3,13 +3,15 @@
 int ppid;
 
 void
-printer(void)
+printer(void* stuff)
 {
 	int msgsz;
 	char *msg;
 	char goodbye[] = "goodbye!";
 	int i = 0;
 
+	printf(1, "printer: start\n");
+	sleep(5);
 	for(;;){
 		msgsz = recvwait();
 		msg = mallocz(msgsz);
@@ -20,11 +22,10 @@ printer(void)
 		free(msg);
 		i++;
 	}
-	printf(1, "printer: sleeping for 30 seconds\n");
-	sleep(30);
+	printf(1,"printer: sleeping 30 seconds\n");
+//	sleep(30); // wtf it like jumps to the start after this returns?
 	sendmsg(ppid, goodbye, sizeof(goodbye));
 	printf(1, "printer: done.\n");
-	exit();
 }
 
 int
@@ -42,14 +43,9 @@ main(int argc, char *argv[])
 		exit();
 	}
 
-	switch(tpid = fork()){
-	case 0:
-		printer();
-		break;
-	case -1:
-		printf(2, "error: unable to start printer\n");
-		exit();
-	}
+	tpid = spawn(&printer, nil);
+	
+	sleep(10);
 	for(i = 0; i < argc-1; i++){
 		argsz = strlen(argv[i+1])+1;
 		sendmsg(tpid, argv[i+1], argsz);

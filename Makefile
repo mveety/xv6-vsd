@@ -138,7 +138,7 @@ qemu-nb: sysall
 bochs: sysall
 	bochs -q -f xv6-vsd.cfg
 
-ULIB = ulib.o usys.o printf.o umalloc.o user_string.o ulocks.o
+ULIB = ulib.o usys.o printf.o umalloc.o user_string.o ulocks.o uthread.o
 
 libc.a: $(ULIB)
 	ar -rc libc.a $(ULIB)
