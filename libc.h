@@ -175,6 +175,7 @@ int canlock(Lock*);
 int canunlock(Lock*);
 
 // uthreads.c
+extern int _threads_useclone; //defaults to 0
 int spawn(void (*entry)(void*), void*);
 
 #endif
