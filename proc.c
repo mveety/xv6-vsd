@@ -693,8 +693,9 @@ procdump(void)
 	int i;
 	struct proc *p;
 	char *state;
+	u32int totalmem = 0;
 
-	cprintf("\nPROCESS DUMP\npid: type, state, name, user, parent, threadi, killed\n");
+	cprintf("\nPROCESS DUMP\npid: type, state, name, sz, user, parent, threadi\n");
 	if(halted)
 		cprintf("system halted, no processes running\n");
 	else {
@@ -706,12 +707,14 @@ procdump(void)
 				state = states[p->state];
 			else
 				state = "???";
-			cprintf("%d: %s, %s, %s, %d, %d, %d\n", p->pid,
-					p->type == THREAD ? "thread" : "process", state,
-					p->name, p->uid, p->parent != nil ? p->parent->pid : 0,
-					p->threadi, p->killed);
+			totalmem += p->sz;
+			cprintf("%d: %s, %s, %s, %u, %d, %d, %d\n", p->pid,
+					p->type == THREAD ? "thread" : "process", state, 
+					p->name, p->sz, p->uid, p->parent != nil ? p->parent->pid : 0,
+					p->threadi);
 		}
 	}
+	cprintf("MEMORY USED: %u bytes\n", totalmem);
 }
 
 // werrstr copies buf to proc->errstr, sets p->errset, and returns

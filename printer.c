@@ -19,11 +19,11 @@ printer(void* stuff)
 		if(msg[0] == 4)
 			break;
 		printf(1, "printer: msg%d: %s\n", i, msg);
-		free(msg);
+//		free(msg);
 		i++;
 	}
 	printf(1,"printer: sleeping 30 seconds\n");
-//	sleep(30); // wtf it like jumps to the start after this returns?
+	sleep(30); // wtf it like jumps to the start after this returns?
 	sendmsg(ppid, goodbye, sizeof(goodbye));
 	printf(1, "printer: done.\n");
 }
@@ -36,7 +36,15 @@ main(int argc, char *argv[])
 	int i;
 	int argsz;
 	char done = 4;
+	void *test;
 
+	test = mallocz(4096);
+	printf(1, "print_test: test = %p\n", test);
+	test = mallocz(4096);
+	printf(1, "print_test: test = %p\n", test);
+	test = mallocz(4096);
+	printf(1, "print_test: test = %p\n", test);
+	sleep(30);
 	ppid = getpid();
 	if(argc < 2){
 		printf(2, "usage: %s [strings]\n", argv[0]);
