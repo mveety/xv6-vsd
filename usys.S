@@ -41,4 +41,6 @@ SYSCALL(chperms)
 SYSCALL(seek)
 SYSCALL(tfork)
 SYSCALL(clone)
-
+SYSCALL(sendmsg)
+SYSCALL(recvmsg)    
+SYSCALL(recvwait)

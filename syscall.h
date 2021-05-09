@@ -32,4 +32,6 @@
 #define SYS_seek	 31
 #define SYS_tfork	 32
 #define SYS_clone	 33
-
+#define SYS_sendmsg  34
+#define SYS_recvmsg  35
+#define SYS_recvwait 36

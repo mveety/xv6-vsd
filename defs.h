@@ -8,6 +8,9 @@ struct rtcdate;
 struct spinlock;
 struct stat;
 struct superblock;
+struct Message;
+
+typedef struct Message Message;
 
 #define INPUT_BUF 128
 struct inputbuf {
@@ -149,6 +152,10 @@ int             werrstr(char*, int);
 // a call to rerrstr with uint 0 and char nil will return 1 if the
 // errstr has been set since last call to rerrstr
 int             rerrstr(char*, int);
+struct proc*    findpid(int);
+uint            precvwait(void);
+Message*        precvmsg(void);
+int             psendmsg(struct proc*, Message*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

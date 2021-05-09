@@ -110,6 +110,9 @@ extern int sys_chperms(void);
 extern int sys_seek(void);
 extern int sys_tfork(void);
 extern int sys_clone(void);
+extern int sys_sendmsg(void);
+extern int sys_recvwait(void);
+extern int sys_recvmsg(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    	sys_fork, // creates a new process
@@ -145,6 +148,9 @@ static int (*syscalls[])(void) = {
 [SYS_seek]		sys_seek, // seeks a file descriptor
 [SYS_tfork]		sys_tfork, // creates a thread process
 [SYS_clone]		sys_clone, // yet another threading mechanism
+[SYS_sendmsg]   sys_sendmsg, // send a message to another process
+[SYS_recvmsg]   sys_recvmsg, // get a message out of your mailbox, if none sleep
+[SYS_recvwait]  sys_recvwait, // sleep until you get a message, return the size
 };
 
 void

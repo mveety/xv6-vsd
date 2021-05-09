@@ -179,3 +179,56 @@ sys_clone(void)
 	return clone(stk);
 }
 
+int // int sendmsg(int pid, void *msg, int size)
+sys_sendmsg(void)
+{
+	int pid;
+	char *msgdata;
+	int size;
+	
+	Message *msg;
+	struct proc *p;
+
+	if(argint(0, &pid) < 0 || argint(2, &size) < 0 || argptr(1, &msgdata, size) < 0)
+		return -1;
+
+	// if a pid isn't found return 0. messages are like mail, you don't know if they get there.
+	if((p = findpid(pid)) == nil)
+		return 0;
+
+	msg = kmalloc(sizeof(Message));
+	msg->size = size;
+	msg->data = msgdata;
+	psendmsg(p, msg);
+	return 0;
+}
+
+int // int recvwait(void);
+sys_recvwait(void)
+{
+	int sz;
+
+	sz = (int)precvwait();
+	return sz;
+}
+
+int // int recvmsg(void *msgbuf, int size)
+sys_recvmsg(void)
+{
+	char *msgbuf;
+	int size;
+
+	Message *msg;
+	int cpysize;
+
+	if(argint(1, &size) < 0 || argptr(0, &msgbuf, size) < 0)
+		return -1;
+
+	msg = precvmsg();
+	if(msg->size < size)
+		cpysize = msg->size;
+	else
+		cpysize = size;
+	memcpy(msgbuf, msg->data, cpysize);
+	return 0;
+}

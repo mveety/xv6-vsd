@@ -103,6 +103,9 @@ int chperms(char*, int, int);
 int tfork(void);
 int seek(int, int, int);
 int clone(uint);
+int sendmsg(int, void*, int);
+int recvmsg(void*, int);
+int recvwait(void);
 
 // ulib.c
 int stat(char*, struct stat*);

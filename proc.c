@@ -29,6 +29,8 @@ extern int useclone;
 
 static void wakeup1(void *chan);
 
+void flush_mailbox(Mailbox*);
+
 void
 pinit(void)
 {
@@ -317,14 +319,18 @@ clone(uint stack)
 		return -1;
 	}
 	*np->tf = *proc->tf;
+
+	// copy the parent's stack to the new thread
 	mem = (char*)stack;
 	if((pstack = walkpgdir(proc->pgdir, (void*)proc->tf->esp, 0)) == 0)
-		panic("clone: clone: parent has not stack page");
+		panic("clone: parent has no stack page");
 	oldstartsp = PGROUNDUP(proc->tf->esp);
 	spoffset = oldstartsp - proc->tf->esp;
 	memmove(mem, (char*)p2v(PTE_ADDR(*pstack)), PGSIZE);
 	proc->tf->esp = stack + PGSIZE;
 	proc->tf->esp -= spoffset;
+
+	// clone parent's state
 	np->pgdir = proc->pgdir;
 	np->sz = proc->sz;
 	np->type = THREAD;
@@ -384,6 +390,11 @@ exit(void)
 			while(wait() != -1) ;
 		}
 	}
+
+	// empty the mailbox
+	flush_mailbox(&proc->mbox);
+	kmfree(proc->mbox.lock);
+	
 	acquire(&ptable.lock);
 	// Parent might be sleeping in wait().
 	wakeup1(proc->parent);
@@ -684,7 +695,7 @@ procdump(void)
 	struct proc *p;
 	char *state;
 
-	cprintf("\nPROCESS DUMP\npid: type state name user parent threadi\n");
+	cprintf("\nPROCESS DUMP\npid: type, state, name, user, parent, threadi\n");
 	if(halted)
 		cprintf("system halted, no processes running\n");
 	else {
@@ -696,7 +707,7 @@ procdump(void)
 				state = states[p->state];
 			else
 				state = "???";
-			cprintf("%d: %s %s %s %d %d %d\n", p->pid,
+			cprintf("%d: %s, %s, %s, %d, %d, %d\n", p->pid,
 					p->type == THREAD ? "thread" : "process", state,
 					p->name, p->uid, p->parent != nil ? p->parent->pid : 0,
 					p->threadi);
@@ -737,20 +748,20 @@ rerrstr(char *buf, int nbytes)
 	return 0;
 }
 	
-int
+struct proc*
 findpid(int pid)
 {
-	int rpid = -1;
+	struct proc *rproc = nil;
 	struct proc *p;
+
 	acquire(&ptable.lock);
 	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		if(p->pid == pid && p->state != UNUSED)
-			if(p->pid == pid){
-				rpid = pid;
+		if(p->pid == pid && p->state != UNUSED){
+				rproc = p;
 				break;
-			}
+		}
 	release(&ptable.lock);
-	return rpid;
+	return rproc;
 }
 
 void
@@ -817,4 +828,71 @@ flush_mailbox(Mailbox *mbox)
 	while(cur != nil)
 		cur = free_message(cur);
 	release(mbox->lock);
+}
+
+uint
+precvwait(void)
+{
+	Mailbox *mbox;
+	int waited = 0;
+	uint hdsize = 0;
+	
+	mbox = &proc->mbox;
+
+	acquire(mbox->lock);
+	if(mbox->head == nil){
+		release(mbox->lock);
+		proc->state = MSGWAIT;
+		waited = 1;
+		acquire(&ptable.lock);
+		sched();
+		release(&ptable.lock);
+	}
+	if(waited)
+		acquire(mbox->lock);
+	hdsize = mbox->head->size;
+	release(mbox->lock);
+	return hdsize;
+}
+
+Message*
+precvmsg(void)
+{
+	Mailbox *mbox;
+	Message *msg;
+	int waited = 0;
+
+	mbox = &proc->mbox;
+
+	acquire(mbox->lock);
+	if(mbox->head == nil){
+		release(mbox->lock);
+		proc->state = MSGWAIT;
+		waited = 1;
+		acquire(&ptable.lock);
+		sched();
+		release(&ptable.lock);
+	}
+	// if we get here there is a message in the box
+	if(waited)
+		acquire(mbox->lock);
+	msg = mbox->head;
+	mbox->head = mbox->head->next;
+	if(mbox->head == nil)
+		mbox->tail = nil;
+	msg->next = nil;
+	release(mbox->lock);
+	return msg;
+}
+
+int
+psendmsg(struct proc *p, Message *msg)
+{
+	Mailbox *mbox;
+
+	mbox = &p->mbox;
+	add_message(mbox, msg);
+	if(p->state == MSGWAIT)
+		p->state = RUNNABLE;
+	return 0;
 }
