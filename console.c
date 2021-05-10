@@ -113,6 +113,7 @@ panic(char *s)
 	
 	cli();
 	cons.locking = 0;
+//	acquire(&cons.lock);
 	cprintf("cpu%d: panic: ", cpu->id);
 	cprintf(s);
 	cprintf("\n");
@@ -120,6 +121,7 @@ panic(char *s)
 	for(i=0; i<10; i++)
 		cprintf("%d: %p\n", i, pcs[i]);
 	procdump();
+//	release(&cons.lock);
 	panicked = 1; // freeze other CPU
 	for(;;)
 		;

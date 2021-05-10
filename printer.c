@@ -38,13 +38,6 @@ main(int argc, char *argv[])
 	char done = 4;
 	void *test;
 
-	test = mallocz(4096);
-	printf(1, "print_test: test = %p\n", test);
-	test = mallocz(4096);
-	printf(1, "print_test: test = %p\n", test);
-	test = mallocz(4096);
-	printf(1, "print_test: test = %p\n", test);
-	sleep(30);
 	ppid = getpid();
 	if(argc < 2){
 		printf(2, "usage: %s [strings]\n", argv[0]);

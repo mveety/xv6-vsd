@@ -21,7 +21,7 @@ Threadstate *_thread_state;
 void
 _vsd_threadstart(void)
 {
-	_threads_useclone = 0;
+	_threads_useclone = 1;
 	_thread_state = mallocz(sizeof(Threadstate));
 	if(_thread_state == nil){
 		printf(2, "threads: unable to initialize\n");

@@ -128,6 +128,7 @@ int
 growproc(int n)
 {
 	uint sz;
+	int i;
 	
 	sz = proc->sz;
 	if(n > 0){
@@ -138,6 +139,13 @@ growproc(int n)
 			return -1;
 	}
 	proc->sz = sz;
+
+	// update thread sizes
+	if(proc->threadi > 0){
+		for(i = 0; i < THREADMAX; i++)
+			if(proc->threads[i]->state != UNUSED)
+				proc->threads[i]->sz = sz;
+	}
 	switchuvm(proc);
 	return 0;
 }
@@ -306,10 +314,11 @@ clone(uint stack)
 	int pid;
 	struct proc *np;
 	char *mem;
+//	char *pstack;
 	pte_t *pstack;
 	uint oldstartsp;
 	uint spoffset;
-	uint a, i;
+	uint a, i, sz;
 
 	fail(!allowthreads, EPNOTHREADS, -1);
 	fail(!useclone, EKDISABLED, -1);
@@ -320,15 +329,20 @@ clone(uint stack)
 	}
 	*np->tf = *proc->tf;
 
-	// copy the parent's stack to the new thread
+//	cprintf("cpu%d: proc->ssp = %p, proc->tf->esp = %p, stack = %x\n", cpu->id, proc->ssp, proc->tf->esp, stack);
+
 	mem = (char*)stack;
 	if((pstack = walkpgdir(proc->pgdir, (void*)proc->tf->esp, 0)) == 0)
 		panic("clone: parent has no stack page");
 	oldstartsp = PGROUNDUP(proc->tf->esp);
 	spoffset = oldstartsp - proc->tf->esp;
 	memmove(mem, (char*)p2v(PTE_ADDR(*pstack)), PGSIZE);
-	proc->tf->esp = stack + PGSIZE;
-	proc->tf->esp -= spoffset;
+	np->tf->esp = stack + PGSIZE;
+	np->ssp = np->tf->esp;
+	np->tf->esp -= spoffset;
+
+//	cprintf("cpu%d:\n  np->ssp = %p,\n  proc->ssp = %p,\n   np->tf->esp = %p,\n  proc->tf->esp = %p\n",
+//			cpu->id, np->ssp, proc->ssp, np->tf->esp, proc->tf->esp);
 
 	// clone parent's state
 	np->pgdir = proc->pgdir;
@@ -707,7 +721,8 @@ procdump(void)
 				state = states[p->state];
 			else
 				state = "???";
-			totalmem += p->sz;
+			if(p->type == PROCESS)
+				totalmem += p->sz;
 			cprintf("%d: %s, %s, %s, %u, %d, %d, %d\n", p->pid,
 					p->type == THREAD ? "thread" : "process", state, 
 					p->name, p->sz, p->uid, p->parent != nil ? p->parent->pid : 0,
