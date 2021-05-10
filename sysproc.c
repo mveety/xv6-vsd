@@ -232,5 +232,7 @@ sys_recvmsg(void)
 	else
 		cpysize = size;
 	memcpy(msgbuf, msg->data, cpysize);
+	kmfree(msg->data);
+	kmfree(msg);
 	return 0;
 }

@@ -19,7 +19,7 @@ printer(void* stuff)
 		if(msg[0] == 4)
 			break;
 		printf(1, "printer: msg%d: %s\n", i, msg);
-//		free(msg);
+		free(msg);
 		i++;
 	}
 	printf(1,"printer: sleeping 30 seconds\n");
