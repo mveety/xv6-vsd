@@ -5,6 +5,7 @@ msgthread(void *args)
 {
 	Message *msg;
 	Mailbox *mbox;
+	int *tmp;
 
 	mbox = mailbox();
 
@@ -19,7 +20,8 @@ msgthread(void *args)
 			break;
 		case 2:
 			selectmsg(mbox, msg);
-			printf(1, "msgthread: got an int: %d\n", *((int*)msg->payload));
+			tmp = msg->payload;
+			printf(1, "msgthread: got an int: %d\n", *tmp);
 			freemsg(msg);
 			break;
 		case 3:
@@ -27,40 +29,38 @@ msgthread(void *args)
 			freemsg(msg);
 			goto done;
 			break;
-//		default:
-//			printf(1, "msgthread: bad message. sentinel = %d\n", msg->sentinel);
-//			break;
+		default:
+			//printf(1, "msgthread: bad message. sentinel = %d\n", msg->sentinel);
+			break;
 		}
 	}
 done:
-	printf(1, "msgthread: mbox->messages = %d\n", mbox->messages);
-	printf(1, "msgthread: exiting\n");
+	printf(1, "msgthread: pre-flush mbox->messages = %d\n", mbox->messages);
 	flush(mbox);
+	printf(1, "msgthread: post-flush mbox->messages = %d\n", mbox->messages);
 	free(mbox);
+	printf(1, "msgthread: exiting\n");
 }
 
 int
 main(int argc, char *argv[])
 {
-	char string1[] = "hello world";
+	char string1[] = "hello world\0";
 	int int1 = 1234;
 	int tpid;
 
 	tpid = spawn(&msgthread, nil);
 
-	sleep(1);
-	printf(1, "sizeof(string1) = %d\n", sizeof(string1));
-	sleep(10);
 	send(tpid, 1, string1, sizeof(string1));
 	send(tpid, 2, &int1, sizeof(int1));
-//	send(tpid, 4, &int1, sizeof(int1));
-//	send(tpid, 5, &int1, sizeof(int1));
-//	send(tpid, 6, &int1, sizeof(int1));
-//	send(tpid, 7, &int1, sizeof(int1));
-//	send(tpid, 8, &int1, sizeof(int1));
-//	send(tpid, 9, &int1, sizeof(int1));
-//	send(tpid, 10, &int1, sizeof(int1));
-//	send(tpid, 11, &int1, sizeof(int1));
+	send(tpid, 4, &int1, sizeof(int1));
+	send(tpid, 5, &int1, sizeof(int1));
+	send(tpid, 6, &int1, sizeof(int1));
+	send(tpid, 7, &int1, sizeof(int1));
+	send(tpid, 8, &int1, sizeof(int1));
+	send(tpid, 9, &int1, sizeof(int1));
+	send(tpid, 10, &int1, sizeof(int1));
+	send(tpid, 11, &int1, sizeof(int1));
 	send(tpid, 3, &int1, sizeof(int1));
 	sleep(30);
 	exit();

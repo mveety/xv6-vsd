@@ -187,7 +187,6 @@ typedef struct Message Message;
 
 struct Mailbox {
 	uint messages;
-	uint looped;
 	Message *head;
 	Message *cur;
 };

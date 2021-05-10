@@ -104,58 +104,6 @@ recv1(void)
 }
 
 void
-mboxpush(Mailbox *mbox, Message *msg)
-{
-	if(mbox->head == nil){
-		mbox->head = msg;
-		return;
-	}
-	msg->next = mbox->head;
-	mbox->head = msg;
-	mbox->messages++;
-}
-
-Message*
-mboxnext(Mailbox *mbox)
-{
-	if(mbox->head == nil)
-		return nil;
-	if(mbox->cur == nil){
-		mbox->looped = 0;
-		mbox->cur = mbox->head;
-		return mbox->cur;
-	}
-	mbox->cur = mbox->cur->next;
-	if(mbox->cur == nil)
-		mbox->looped = 1;
-	return mbox->cur;
-}
-
-void
-mboxselect(Mailbox *mbox, Message *msg)
-{
-	Message *newlst = nil;
-	Message *ncur = nil;
-	Message *cur;
-
-	for(cur = mbox->head; cur != nil; cur = cur->next){
-		if(msg == cur)
-			continue;
-		if(newlst == nil)
-			newlst = ncur = cur;
-		else {
-			ncur->next = cur;
-			ncur = cur;
-		}
-	}
-	mbox->head = newlst;
-	if(mbox->cur == msg){
-		mbox->looped = 1;
-		mbox->cur = nil;
-	}
-}
-
-void
 send(int pid, int sentinel, void *payload, int len)
 {
 	Message *msg;
@@ -164,7 +112,6 @@ send(int pid, int sentinel, void *payload, int len)
 	if(!msg)
 		msgpanic("bad malloc");
 
-	printf(2, "len = %d\n", len);
 	msg->sentinel = sentinel;
 	msg->payload = payload;
 	msg->len = len;
@@ -177,20 +124,44 @@ receive(Mailbox *mbox)
 {
 	Message *msg;
 
-	if(mbox->head == nil || (mbox->cur == nil && mbox->looped)){
-		msg = recv1();
-		mboxpush(mbox, msg);
+	if(mbox != nil){
+		if(mbox->cur == nil){
+			msg = recv1();
+			msg->next = mbox->head;
+			mbox->head = msg;
+			mbox->cur = msg;
+			mbox->messages++;
+			return msg;
+		}
+		msg = mbox->cur;
+		mbox->cur = mbox->cur->next;
 		return msg;
 	}
-	return mboxnext(mbox);
+	msg = recv1();
+	freemsg(msg);
+	return nil;
 }
 
 void
 selectmsg(Mailbox *mbox, Message *msg)
 {
-	mboxselect(mbox, msg);
-	mbox->messages--;
-	msg->next = nil;
+	Message *cur = nil;
+	Message *prev = nil;
+
+	for(cur = mbox->head; cur != nil; cur = cur->next){
+		if(cur == msg){
+			if(prev == nil)
+				mbox->head = cur->next;
+			else
+				prev->next = cur->next;
+			if(msg == mbox->cur)
+				mbox->cur = cur->next;
+			mbox->messages--;
+			msg->next = nil;
+			return;
+		}
+		prev = cur;
+	}
 }
 
 int
@@ -207,14 +178,19 @@ void
 flush(Mailbox *mbox)
 {
 	Message *cur;
-	Message *prev;
+	Message *prev = nil;
 
 	cur = mbox->head;
+	if(cur == nil)
+		return;
 	for(;;){
 		prev = cur;
 		cur = cur->next;
-		free(prev->payload);
-		free(prev);
+		if(prev != nil){
+			free(prev->payload);
+			free(prev);
+			mbox->messages--;
+		}
 		if(cur == nil)
 			break;
 	}

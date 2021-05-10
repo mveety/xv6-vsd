@@ -25,6 +25,7 @@ int sysnamelen = 0;
 
 int allowthreads = 1;
 int useclone = 1;
+int msgnote = 0;
 
 int sysctl_write(struct inode*, char*, int, int);
 int sysctl_read(struct inode*, char*, int, int);
@@ -64,12 +65,14 @@ char *scmsg[] = {
 	[5] "allowthreads 0\n",
 	[6] "useclone 1    \n",
 	[7] "useclone 0    \n",
+	[8] "msgnote 1     \n",
+	[9] "msgnote 0     \n",
 };
 
 int
 sysctl_read(struct inode* ip, char* bf, int nbytes, int off)
 {
-	int scmsz = scmsgsz*4;
+	int scmsz = scmsgsz*5;
 	char buf[scmsz+5];
 	int rnbytes;
 
@@ -84,6 +87,7 @@ sysctl_read(struct inode* ip, char* bf, int nbytes, int off)
 	memmove(&buf[15], singleuser ? scmsg[2] : scmsg[3], scmsgsz);
 	memmove(&buf[30], allowthreads ? scmsg[4] : scmsg[5], scmsgsz);
 	memmove(&buf[45], useclone ? scmsg[6] : scmsg[7], scmsgsz);
+	memmove(&buf[60], msgnote ? scmsg[8] : scmsg[9], scmsgsz);
 	memmove(bf, &buf[0], rnbytes);
 	return rnbytes;
 }
@@ -169,7 +173,6 @@ sysctl_write(struct inode *ip, char *bf, int nbytes, int off)
 				cprintf("cpu%d: useclone = no\n", cpu->id);
 			}
 			break;
-
 		} else if(strcmp(buf, "startdrv") == 0){
 			rbf = getnextfield(buf, rbf, &i, &st);
 			if(st)
@@ -177,6 +180,18 @@ sysctl_write(struct inode *ip, char *bf, int nbytes, int off)
 			if(!startdrv(buf)){
 				seterr(EDSTARTFAIL);
 				return -1;
+			}
+			break;
+		} else if(strcmp(buf, "msgnote") == 0){
+			rbf = getnextfield(buf, rbf, &i, &st);
+			if(st)
+				break;
+			if(strcmp(buf, "yes") == 0){
+				msgnote = 1;
+				cprintf("cpu%d: msgnote = yes\n", cpu->id);
+			} else if(strcmp(buf, "no") == 0){
+				msgnote = 0;
+				cprintf("cpu%d: msgnode = no\n", cpu->id);
 			}
 			break;
 		} else {

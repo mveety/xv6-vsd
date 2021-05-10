@@ -7,6 +7,7 @@ void sysuart(int);
 void singleuser(int);
 void allowthreads(int);
 void useclone(int);
+void msgnote(int);
 
 int
 main(int argc, char *argv[])
@@ -47,6 +48,12 @@ main(int argc, char *argv[])
 			exit();
 		}
 		useclone(atoi(argv[2]));
+	} else if(strcmp(argv[1], "msgnote") == 0){
+		if(argc < 3){
+			printf(2, "usage: sysctl msgnote [0|1]\n");
+			exit();
+		}
+		msgnote(atoi(argv[2]));
 	} else
 		usage();
 	close(sysctlfd);
@@ -91,6 +98,18 @@ useclone(int st)
 {
 	char *enable = "useclone yes  \0";
 	char *disable = "useclone no  \0";
+	if(st)
+		write(sysctlfd, enable, strlen(enable));
+	else
+		write(sysctlfd, disable, strlen(disable));
+}
+
+void
+msgnote(int st)
+{
+	char *enable = "msgnote yes   \0";
+	char *disable = "msgnote no   \0";
+
 	if(st)
 		write(sysctlfd, enable, strlen(enable));
 	else

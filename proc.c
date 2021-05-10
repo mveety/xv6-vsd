@@ -26,6 +26,7 @@ extern void trapret(void);
 extern int booted;
 extern int allowthreads;
 extern int useclone;
+extern int msgnote;
 
 static void wakeup1(void *chan);
 
@@ -860,6 +861,8 @@ precvwait(void)
 	if(mbox->head == nil){
 		release(mbox->lock);
 		proc->state = MSGWAIT;
+		if(msgnote)
+			cprintf("cpu%d: recvwait %d: msgwait\n", cpu->id, proc->pid);
 		waited = 1;
 		acquire(&ptable.lock);
 		sched();
@@ -868,6 +871,8 @@ precvwait(void)
 	if(waited)
 		acquire(mbox->lock);
 	hdsize = mbox->head->size;
+	if(msgnote)
+		cprintf("cpu%d: recvwait %d: new msg size = %d\n", cpu->id, proc->pid, hdsize);
 	release(mbox->lock);
 	return hdsize;
 }
@@ -885,6 +890,8 @@ precvmsg(void)
 	if(mbox->head == nil){
 		release(mbox->lock);
 		proc->state = MSGWAIT;
+		if(msgnote)
+			cprintf("cpu%d: recvmsg %d: msgwait\n", cpu->id, proc->pid);
 		waited = 1;
 		acquire(&ptable.lock);
 		sched();
@@ -899,6 +906,8 @@ precvmsg(void)
 		mbox->tail = nil;
 	msg->next = nil;
 	release(mbox->lock);
+	if(msgnote)
+		cprintf("cpu%d: recvmsg %d: new msg size = %d\n", cpu->id, proc->pid, msg->size);
 	return msg;
 }
 
@@ -908,6 +917,8 @@ psendmsg(struct proc *p, Message *msg)
 	Mailbox *mbox;
 
 	mbox = &p->mbox;
+	if(msgnote)
+		cprintf("cpu%d: sendmsg %d -> %d\n", cpu->id, proc->pid, p->pid);
 	add_message(mbox, msg);
 	if(p->state == MSGWAIT)
 		p->state = RUNNABLE;

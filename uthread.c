@@ -21,7 +21,7 @@ Threadstate *_thread_state;
 void
 _vsd_threadstart(void)
 {
-	_threads_useclone = 1;
+	_threads_useclone = 0;
 	_thread_state = mallocz(sizeof(Threadstate));
 	if(_thread_state == nil){
 		printf(2, "threads: unable to initialize\n");
@@ -59,12 +59,9 @@ _vsd_allocate_thread()
 void
 _vsd_threadentry(Thread *me, void (*entry)(void*), void *args)
 {
-	printf(2, "thread: start\n");
 	entry(args);
 	me->pid = -1;
-	printf(2, "thread: exit\n");
 	exit();
-	printf(2, "thread: undead\n");
 }
 
 int
