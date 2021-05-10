@@ -1,0 +1,67 @@
+#include <libc.h>
+
+void
+msgthread(void *args)
+{
+	Message *msg;
+	Mailbox *mbox;
+
+	mbox = mailbox();
+
+	printf(1, "msgthread: start\n");
+	for(;;){
+		msg = receive(mbox);
+		switch(msg->sentinel){
+		case 1:
+			selectmsg(mbox, msg);
+			printf(1, "msgthread: got a string: \"%s\"\n", msg->payload);
+			freemsg(msg);
+			break;
+		case 2:
+			selectmsg(mbox, msg);
+			printf(1, "msgthread: got an int: %d\n", *((int*)msg->payload));
+			freemsg(msg);
+			break;
+		case 3:
+			selectmsg(mbox, msg);
+			freemsg(msg);
+			goto done;
+			break;
+//		default:
+//			printf(1, "msgthread: bad message. sentinel = %d\n", msg->sentinel);
+//			break;
+		}
+	}
+done:
+	printf(1, "msgthread: mbox->messages = %d\n", mbox->messages);
+	printf(1, "msgthread: exiting\n");
+	flush(mbox);
+	free(mbox);
+}
+
+int
+main(int argc, char *argv[])
+{
+	char string1[] = "hello world";
+	int int1 = 1234;
+	int tpid;
+
+	tpid = spawn(&msgthread, nil);
+
+	sleep(1);
+	printf(1, "sizeof(string1) = %d\n", sizeof(string1));
+	sleep(10);
+	send(tpid, 1, string1, sizeof(string1));
+	send(tpid, 2, &int1, sizeof(int1));
+//	send(tpid, 4, &int1, sizeof(int1));
+//	send(tpid, 5, &int1, sizeof(int1));
+//	send(tpid, 6, &int1, sizeof(int1));
+//	send(tpid, 7, &int1, sizeof(int1));
+//	send(tpid, 8, &int1, sizeof(int1));
+//	send(tpid, 9, &int1, sizeof(int1));
+//	send(tpid, 10, &int1, sizeof(int1));
+//	send(tpid, 11, &int1, sizeof(int1));
+	send(tpid, 3, &int1, sizeof(int1));
+	sleep(30);
+	exit();
+}

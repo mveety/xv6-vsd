@@ -181,4 +181,29 @@ int spawn(void (*entry)(void*), void*);
 // sprintf.c
 char *sprintf(char*, ...);
 
+// message.c
+typedef struct Mailbox Mailbox;
+typedef struct Message Message;
+
+struct Mailbox {
+	uint messages;
+	uint looped;
+	Message *head;
+	Message *cur;
+};
+
+struct Message {
+	int sentinel;
+	uint len;
+	void *payload;
+	Message *next;
+};
+
+void send(int, int, void*, int);
+Message* receive(Mailbox*);
+void selectmsg(Mailbox*, Message*);
+int freemsg(Message*);
+void flush(Mailbox*);
+Mailbox *mailbox(void);
+
 #endif
