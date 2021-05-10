@@ -75,7 +75,6 @@ printf(int fd, char *fmt, ...)
 					s++;
 				}
 			} else if(c == 'r'){
-				ap++;
 				if(rerrstr(errbuf, 0))
 					rerrstr(errbuf, 256);
 				for(int i = 0; errbuf[i] != '\0'; i++)

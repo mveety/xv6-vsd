@@ -178,5 +178,7 @@ int canunlock(Lock*);
 extern int _threads_useclone; //defaults to 0
 int spawn(void (*entry)(void*), void*);
 
-#endif
+// sprintf.c
+char *sprintf(char*, ...);
 
+#endif
