@@ -16,6 +16,5 @@ else
 	MEM=$2
 fi
 
-qemu-system-i386 -serial mon:stdio -hdb fs.img xv6.img -smp $CPUS -m $MEM \
-					-no-reboot -no-shutdown 
+qemu-system-i386 -serial mon:stdio -hda fs.img -smp $CPUS -m $MEM
 

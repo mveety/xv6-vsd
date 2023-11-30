@@ -127,13 +127,16 @@ sysall: fs.img
 all: sysall
 
 qemu: sysall
-	sh ./Tools/qemu-nb
+	sh ./Tools/qemu
 
 qemu-gdb: sysall
-	sh ./Tools/qemu-nb-gdb
+	sh ./Tools/qemu-gdb
 
 qemu-nb: sysall
-	qemu-system-i386 -serial mon:stdio -hda fs.img -smp 2 -m 256 -no-shutdown -no-reboot
+	sh ./Tools/qemu-nb
+
+qemu-nb-gdb: sysall
+	sh ./Tools/qemu-nb-gdb
 
 bochs: sysall
 	bochs -q -f xv6-vsd.cfg
