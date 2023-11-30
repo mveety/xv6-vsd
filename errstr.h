@@ -7,7 +7,7 @@
 
 // list of standard error strings
 // test errstrs
-#define EROBPIKE "he's a world class jackass"
+#define EROBPIKE "object oriented design is the roman numerals of computing"
 #define EAIJU "no."
 #define EMVEETY "what?"
 #define EIDKMAN "general error"
@@ -44,6 +44,7 @@
 
 // proc syscalls
 #define EPFORKNP "no free processes"
+#define EPCLONENP "no free processes"
 #define EPFORKNS "could not copy parent state"
 #define EPWAITNOCH "no children's deaths to mourn"
 #define EPNOARGV "no known arguments"
@@ -77,4 +78,3 @@
 #define EIDIRFULL "directory not empty"
 #define EIBADTYPE "file is the wrong type"
 #define EIBOFFSET "read offset is out of bounds"
-
