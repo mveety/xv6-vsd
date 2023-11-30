@@ -42,6 +42,7 @@ bootmain(void)
 		putch(' ');
 	cur_line = 0;
 	cur_col = 0;
+	putch(' ');putch(' ');
 	putch('v');putch('s');putch('d');putch('.');putch('b');putch('i');putch('n');
 	putch(' ');
 	putch('0');
@@ -199,7 +200,7 @@ printst(void)
 	colsave = cur_col;
 	linesave = cur_line;
 	cur_col = 0;
-	cur_line = 1;
+	cur_line = 0;
 	switch(stiter){
 	case 0:
 		putch('|');
