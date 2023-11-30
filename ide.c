@@ -62,6 +62,7 @@ ideinit(void)
 	int i;
 	
 	initlock(&idelock, "ide");
+	cprintf("cpu%d: driver: starting ide\n", cpu->id);
 	picenable(IRQ_IDE);
 	ioapicenable(IRQ_IDE, ncpu - 1);
 	idewait(0);
@@ -77,6 +78,8 @@ ideinit(void)
 	
 	// Switch back to disk 0.
 	outb(0x1f6, 0xe0 | (0<<4));
+	devsw[6].read = ide_read;
+	devsw[6].write = ide_write;
 }
 
 // Start the request for b.  Caller must hold idelock.
@@ -105,8 +108,6 @@ idestart(struct buf *b)
 	} else {
 		outb(0x1f7, IDE_CMD_READ);
 	}
-	devsw[6].read = ide_read;
-	devsw[6].write = ide_write;
 }
 
 // Interrupt handler.

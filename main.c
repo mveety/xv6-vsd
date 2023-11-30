@@ -42,13 +42,9 @@ main(void)
 	}
 	startothers();   // start other processors
 	kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
-	cprintf("cpu%d: driver: starting ide\n", cpu->id);
 	ideinit();       // disk
-	cprintf("cpu%d: system: starting bcache\n", cpu->id);
-	binit();         // buffer cache
-	cprintf("cpu%d: system: starting vfs\n", cpu->id);
-	fileinit();      // file table
-	bdisk_init();	// /dev/disk*
+	binit();         // buffer cache and /dev/disk*
+	fileinit();      // file tables
 	bitbucket_init(); // /dev/null, /dev/zero, /dev/robpike devices
 	sysctl_init();  // /dev/sysctl
 	sysname_init(); // /dev/sysname

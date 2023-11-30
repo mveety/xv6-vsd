@@ -29,7 +29,6 @@ void            binit(void);
 struct buf*     bread(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
-void			bdisk_init(void);
 
 // console.c
 void            consoleinit(void);
@@ -58,6 +57,7 @@ struct inode*   dirlookup(struct inode*, char*, uint*);
 struct inode*   ialloc(uint, short);
 struct inode*   iget(uint, uint);
 struct inode*   idup(struct inode*);
+void			fsinit(int dev);
 void            iinit(int dev);
 void            ilock(struct inode*);
 void            iput(struct inode*);

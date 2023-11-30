@@ -41,6 +41,9 @@ struct {
 	struct buf head;
 } bcache;
 
+int bdisk_read(struct inode*, char*, int, int);
+int bdisk_write(struct inode*, char*, int, int);
+
 void
 binit(void)
 {
@@ -49,6 +52,7 @@ binit(void)
 	initlock(&bcache.lock, "bcache");
 
 //PAGEBREAK!
+	cprintf("cpu%d: system: starting bcache\n", cpu->id);
 	// Create linked list of buffers
 	bcache.head.prev = &bcache.head;
 	bcache.head.next = &bcache.head;
@@ -59,6 +63,8 @@ binit(void)
 		bcache.head.next->prev = b;
 		bcache.head.next = b;
 	}
+	devsw[7].read = bdisk_read;
+	devsw[7].write = bdisk_write;
 }
 
 // Look through buffer cache for block on device dev.
@@ -204,12 +210,3 @@ bdisk_write(struct inode *ip, char *bf, int nbytes, int off)
 	brelse(b);
 	return nbytes;
 }
-
-void
-bdisk_init(void)
-{
-	cprintf("cpu%d: starting bdisk\n", cpu->id);
-	devsw[7].read = bdisk_read;
-	devsw[7].write = bdisk_write;
-}
-

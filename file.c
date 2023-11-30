@@ -98,6 +98,7 @@ void
 fileinit(void)
 {
 	initlock(&ftable.lock, "ftable");
+	cprintf("cpu%d: system: starting vfs\n", cpu->id);
 }
 
 // Allocate a file structure.

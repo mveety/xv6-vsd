@@ -178,21 +178,28 @@ offset2real(uint off)
 }
 
 void
+fsinit(int dev)
+{
+	iinit(dev);
+	initlog(dev);
+}
+
+void
 iinit(int dev)
 {
 	initlock(&icache.lock, "icache");
 	readsb(dev, &sb);
-	cprintf("fs: using vsd filesystem\n");
+	cprintf("fs: disk%d: using vsd filesystem\n", dev);
 	if(sb.bootinode > 0)
-		cprintf("fs: bootloader at inode %u\n", sb.bootinode);
+		cprintf("fs: disk%d: bootloader at inode %u\n", dev, sb.bootinode);
 	if(sb.kerninode > 0)
-		cprintf("fs: kernel is at inode %u\n", sb.kerninode);
-	cprintf("fs: mounting volume %s, version %u", sb.label, sb.version);
+		cprintf("fs: disk%d: kernel is at inode %u\n", dev, sb.kerninode);
+	cprintf("fs: disk%d: mounting volume %s, version %u", dev, sb.label, sb.version);
 	if(sb.bootable)
 		cprintf(" (bootable)");
 	if(sb.system)
 		cprintf(" (system)");
-	cprintf("\nfs: sb: size %d nblocks %d ninodes %d nlog %d logstart %d\nfs: sb: inodestart %d bmap start %d\n", sb.size, sb.nblocks, sb.ninodes, sb.nlog, sb.logstart, sb.inodestart, sb.bmapstart);
+	cprintf("\nfs: disk%d: sb: size %d nblocks %d ninodes %d nlog %d logstart %d\nfs: sb: inodestart %d bmap start %d\n", dev, sb.size, sb.nblocks, sb.ninodes, sb.nlog, sb.logstart, sb.inodestart, sb.bmapstart);
 	if(!sb.system && !havesysfs)
 		panic("given disk is not a system disk");
 	havesysfs = 1;
