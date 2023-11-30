@@ -21,7 +21,7 @@ Threadstate *_thread_state;
 void
 _vsd_threadstart(void)
 {
-	_threads_useclone = 0;
+	_threads_useclone = 1;
 	_thread_state = mallocz(sizeof(Threadstate));
 	if(_thread_state == nil){
 		printf(2, "threads: unable to initialize\n");
@@ -80,7 +80,8 @@ spawn(void (*entry)(void*), void *args)
 	if(_threads_useclone){
 		unlock(_thread_state->lock);
 		if(new->stack == nil){
-			new->stack = malloc(4096);
+			// new->stack = malloc(4096);
+			new->stack = sbrk(4096);
 			if(new->stack == nil){
 				printf(2, "threads: panic: unable to allocate new stack\n");
 				exit();

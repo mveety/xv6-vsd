@@ -111,8 +111,8 @@ struct proc {
 	char errstr[ERRMAX];         // error strings make more sense than error codes.
 	uchar errset;                // has errstr been set recently?
 	char name[128];              // Process name (debugging)
-	uint ssp;
-	uint threadi;
+	uint ssp;					 // top of the stack (bottom is ssp-2*PGSIZE)
+	uint threadi;				 // number of child threads
 	struct proc *threads[THREADMAX];	 // all child threads
 	Mailbox mbox;                // process mailbox
 };

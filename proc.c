@@ -317,9 +317,7 @@ clone(uint stack)
 	int pid;
 	struct proc *np;
 	char *mem;
-//	char *pstack;
 	pte_t *pstack;
-	uint oldstartsp;
 	uint spoffset;
 	uint a, i, sz;
 
@@ -327,24 +325,23 @@ clone(uint stack)
 	fail(!useclone, EKDISABLED, -1);
 	fail(proc->threadi >= THREADMAX, EP2MANYT, -1);
 	if((np = allocproc()) == 0){
-		seterr(EPFORKNP);
+		seterr(EPCLONENP);
 		return -1;
 	}
 	*np->tf = *proc->tf;
-
-//	cprintf("cpu%d: proc->ssp = %p, proc->tf->esp = %p, stack = %x\n", cpu->id, proc->ssp, proc->tf->esp, stack);
+//	cprintf("cpu%d: proc->ssp = %p, proc->tf->esp = %p, stack = %x\n", cpu->id, proc->ssp,
+//			proc->tf->esp, stack);
 
 	mem = (char*)stack;
 	if((pstack = walkpgdir(proc->pgdir, (void*)proc->tf->esp, 0)) == 0)
 		panic("clone: parent has no stack page");
-	oldstartsp = PGROUNDUP(proc->tf->esp);
-	spoffset = oldstartsp - proc->tf->esp;
+	spoffset = proc->ssp - proc->tf->esp;
 	memmove(mem, (char*)p2v(PTE_ADDR(*pstack)), PGSIZE);
 	np->tf->esp = stack + PGSIZE;
 	np->ssp = np->tf->esp;
 	np->tf->esp -= spoffset;
 
-//	cprintf("cpu%d:\n  np->ssp = %p,\n  proc->ssp = %p,\n   np->tf->esp = %p,\n  proc->tf->esp = %p\n",
+//	cprintf("cpu%d: np->ssp = %p, proc->ssp = %p, np->tf->esp = %p,\n  proc->tf->esp = %p\n",
 //			cpu->id, np->ssp, proc->ssp, np->tf->esp, proc->tf->esp);
 
 	// clone parent's state
