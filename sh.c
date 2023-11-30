@@ -80,12 +80,15 @@ runcmd(struct cmd *cmd)
 	struct pipecmd *pcmd;
 	struct redircmd *rcmd;
 
-	if(cmd == 0)
+	if(cmd == 0){
 		exit();
+		return;
+	}
 	
 	switch(cmd->type){
 	default:
 		panic("runcmd");
+		return;
 
 	case EXEC:
 		ecmd = (struct execcmd*)cmd;
@@ -150,6 +153,7 @@ runcmd(struct cmd *cmd)
 		break;
 	}
 	exit();
+	return;
 }
 
 int
