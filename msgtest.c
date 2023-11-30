@@ -26,6 +26,7 @@ msgthread(void *args)
 			break;
 		case 3:
 			selectmsg(mbox, msg);
+			printf(1, "msgthread: got message 3\n");
 			freemsg(msg);
 			goto done;
 			break;

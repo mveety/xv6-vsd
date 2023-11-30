@@ -2,6 +2,7 @@
 //#include "kmsg.h"
 // Segments in proc->gdt.
 #define NSEGS     7
+#define WAITROUNDS 5
 
 // Per-CPU state
 struct cpu {
@@ -76,6 +77,7 @@ enum procstate {
 	UNUSED,		// proc not in use
 	EMBRYO,		// proc not totally initialized
 	SLEEPING,	// zzzzzzz
+	WAIT,		// waiting on children
 	MSGWAIT,    // process waiting to receive a message
 	RUNNABLE,	// can run next scheduler round
 	RUNNING,	// currently running
@@ -90,6 +92,7 @@ struct proc {
 	char *kstack;                // Bottom of kernel stack for this process
 	enum procstate state;        // Process state
 	enum proctype type;			 // Process type
+	int waitrounds;				 // how many sched rounds left before run
 	int pid;                     // Process ID
 	int uid;                     // User id
 	int sid;                     // System id (-1 = global)

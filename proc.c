@@ -30,6 +30,8 @@ extern int msgnote;
 
 static void wakeup1(void *chan);
 
+void yield1(void);
+int wait1(void);
 void flush_mailbox(Mailbox*);
 
 void
@@ -398,11 +400,15 @@ exit(void)
 	if(proc->type == PROCESS){
 		// if we have threads kill them
 		if(proc->threadi > 0){
+			acquire(&ptable.lock);
 			for(i = 0; i < THREADMAX; i++){
 				if(proc->threads[i] != nil)
 					proc->threads[i]->killed = 1;
 			}
-			while(wait() != -1) ;
+			if(proc->threadi > 0)
+				while(wait1() != -1) ;
+			else
+				release(&ptable.lock);
 		}
 	}
 
@@ -433,10 +439,18 @@ exit(void)
 int
 wait(void)
 {
+	acquire(&ptable.lock);
+	return wait1();
+}
+
+// wait1 is called when you need to wait but also need to hold
+// ptable.lock. wait1 released the lock when it returns.
+int
+wait1(void)
+{
 	struct proc *p;
 	int havekids, pid;
 
-	acquire(&ptable.lock);
 	for(;;){
 		// Scan through table looking for zombie children.
 		havekids = 0;
@@ -475,7 +489,15 @@ wait(void)
 		}
 
 		// Wait for children to exit.  (See wakeup1 call in proc_exit.)
-		sleep(proc, &ptable.lock);  //DOC: wait-sleep
+		// sleep(proc, &ptable.lock);  //DOC: wait-sleep
+
+		// use WAIT state instead. sleeping on the ptable.lock is fine, but it
+		// could be the case that your threads are exiting on their own
+		// while you are also exiting. If the thread beats you, you call
+		// sleep, but have no children to wake you.
+		proc->state = WAIT;
+		proc->waitrounds = WAITROUNDS;
+		sched();
 	}
 }
 
@@ -536,8 +558,22 @@ scheduler(void)
 			if(p->uid != -1 && singleuser == 1)
 				continue;
 			
-			if(p->state != RUNNABLE)
+			if(p->state != RUNNABLE){
+				// this handles the new wait state. when processes
+				// wait on children they get put in the wait state
+				// which will transition to RUNNABLE when waitrounds
+				// is <= 0. This is to handle the race where a process
+				// might sleep waiting to be awoken by its non-existant
+				// children. this is pretty hacky and wasteful and a
+				// better solution needs to be found.
+				if(p->state == WAIT){
+					if(p->waitrounds > 0)
+						p->waitrounds--;
+					else
+						p->state = RUNNABLE;
+				}
 				continue;
+			}
 
 			// Switch to chosen process.  It is the process's job
 			// to release ptable.lock and then reacquire it
@@ -578,11 +614,17 @@ sched(void)
 
 // Give up the CPU for one scheduling round.
 void
+yield1(void)
+{
+	proc->state = RUNNABLE;
+	sched();
+}
+
+void
 yield(void)
 {
 	acquire(&ptable.lock);  //DOC: yieldlock
-	proc->state = RUNNABLE;
-	sched();
+	yield1();
 	release(&ptable.lock);
 }
 
@@ -704,13 +746,14 @@ procdump(void)
 	[RUNNING]   "run\0",
 	[ZOMBIE]    "zombie\0",
 	[MSGWAIT]   "msgwait\0",
+	[WAIT]		"wait\0",
 	};
 	int i;
 	struct proc *p;
 	char *state;
 	u32int totalmem = 0;
 
-	cprintf("\nPROCESS DUMP\npid: type, state, name, sz, user, parent, threadi\n");
+	cprintf("\nPROCESS DUMP\npid: type, state, name, sz, user, parent, threadi, waitrounds\n");
 	if(halted)
 		cprintf("system halted, no processes running\n");
 	else {
@@ -724,10 +767,10 @@ procdump(void)
 				state = "???";
 			if(p->type == PROCESS)
 				totalmem += p->sz;
-			cprintf("%d: %s, %s, %s, %u, %d, %d, %d\n", p->pid,
+			cprintf("%d: %s, %s, %s, %u, %d, %d, %d, %d\n", p->pid,
 					p->type == THREAD ? "thread" : "process", state, 
 					p->name, p->sz, p->uid, p->parent != nil ? p->parent->pid : 0,
-					p->threadi);
+					p->threadi, p->waitrounds);
 		}
 	}
 	cprintf("MEMORY USED: %u bytes\n", totalmem);
