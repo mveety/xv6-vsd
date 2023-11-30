@@ -63,6 +63,6 @@ main(int argc, char *argv[])
 	send(tpid, 10, &int1, sizeof(int1));
 	send(tpid, 11, &int1, sizeof(int1));
 	send(tpid, 3, &int1, sizeof(int1));
-	sleep(30);
+	wait();
 	exit();
 }
