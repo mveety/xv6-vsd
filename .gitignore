@@ -9,6 +9,7 @@ _*
 .*.*.swp
 .*.swp
 *.patch
+TAGS
 bootblock
 entryother
 initcode
