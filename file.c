@@ -267,6 +267,10 @@ filewrite(struct file *f, char *addr, int n)
 			iunlock(f->ip);
 			end_op();
 
+			if(r == -2){
+				seterr(EIFSFULL);
+				return -1;
+			}
 			if(r < 0)
 				break;
 			if(r != n1){

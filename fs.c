@@ -406,19 +406,24 @@ bmap_g(struct inode *ip, uint bn, int create)
 	indir_ptr bptr;
 	uint addr;
 	uint *id_block;
+	uint newblock;
 	struct buf *bp;
 
 	if(bn >= MAXFILE)
 		panic("newbmap: block out of range");
 	bptr = offset2real(bn);
-	if(ip->addrs[bptr.block] == 0 && create)
-		ip->addrs[bptr.block] = balloc(ip->dev);
-	else if(!create)
+	if(ip->addrs[bptr.block] == 0 && create){
+		if((newblock = balloc(ip->dev)) == 0)
+			return -1;
+		ip->addrs[bptr.block] = newblock;
+	}else if(!create)
 		return -1;
 	bp = bread(ip->dev, ip->addrs[bptr.block]);
 	id_block = (uint*)bp->data;
 	if(id_block[bptr.ptr] == 0 && create){
-		id_block[bptr.ptr] = balloc(ip->dev);
+		if((newblock = balloc(ip->dev)) == 0)
+			return -1;
+		id_block[bptr.ptr] = newblock;
 		log_write(bp);
 	} else if(!create)
 		return -1;
@@ -522,6 +527,7 @@ int
 writei(struct inode *ip, char *src, uint off, uint n)
 {
 	uint tot, m;
+	int bnum;
 	struct buf *bp;
 
 	if(ip->type == T_DEV){
@@ -536,14 +542,19 @@ writei(struct inode *ip, char *src, uint off, uint n)
 		return -1;
 // TODO: make disks use the devsw shit
 	for(tot=0; tot<n; tot+=m, off+=m, src+=m){
-		bp = bread(ip->dev, bmap(ip, off/BSIZE));
+		// if bmap returns < 0 means something bad happened
+		if((bnum = bmap(ip, off/BSIZE)) < 0){
+			n = -2;
+			break;
+		}
+		bp = bread(ip->dev, bnum);
 		m = min(n - tot, BSIZE - off%BSIZE);
 		memmove(bp->data + off%BSIZE, src, m);
 		log_write(bp);
 		brelse(bp);
 	}
 
-	if(n > 0 && off > ip->size){
+	if((n > 0 || n == -2) && off > ip->size){
 		ip->size = off;
 		iupdate(ip);
 	}

@@ -289,7 +289,7 @@ create(char *path, short type, short major, short minor)
 	}
 
 	if((ip = ialloc(dp->dev, type)) == 0){
-		seterr(EIFSFULL);
+		seterr(EIFSNOINODE);
 		return 0;
 	//	panic("create: ialloc");
 	}

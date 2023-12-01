@@ -120,7 +120,7 @@ panic(char *s)
 	getcallerpcs(&s, pcs);
 	for(i=0; i<10; i++)
 		cprintf("%d: %p\n", i, pcs[i]);
-	procdump();
+//	procdump();
 //	release(&cons.lock);
 	panicked = 1; // freeze other CPU
 	for(;;)
