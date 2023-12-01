@@ -28,6 +28,8 @@ extern int allowthreads;
 extern int useclone;
 extern int msgnote;
 
+static int first = 1;
+
 static void wakeup1(void *chan);
 
 void yield1(void);
@@ -576,6 +578,10 @@ scheduler(void)
 				p->name[0] = 0;
 				p->killed = 0;
 			}
+
+			// only let the kernel process run until things settle down
+			if(first && p->pid != 0)
+				continue;
 			
 			// so the scheduler runs as normal when not in singleuser.
 			// when the scheduler is in singleuser, non-system processes
@@ -586,7 +592,7 @@ scheduler(void)
 			// processes from running, the system processes get higher
 			// priority and the other processes will not do anything
 			// unpredictable to the machine.
-			
+
 			if(p->uid != -1 && singleuser == 1)
 				continue;
 			
@@ -665,7 +671,6 @@ yield(void)
 void
 forkret(void)
 {
-	static int first = 1;
 	// Still holding ptable.lock from scheduler.
 	release(&ptable.lock);
 
