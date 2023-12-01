@@ -143,6 +143,7 @@ void            scheduler(void) __attribute__((noreturn));
 void            sched(void);
 void            sleep(void*, struct spinlock*);
 void            userinit(void);
+void			kernelinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);

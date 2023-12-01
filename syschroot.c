@@ -38,7 +38,6 @@ int
 chroot(char *path)
 {
 	struct inode *rp;
-	struct inode *rootdir;
 	int pathlen;
 	char pathbf[128];
 
@@ -48,7 +47,6 @@ chroot(char *path)
 		return -1;
 	begin_op();
 	rp = namei(path);
-	rootdir = iget(ROOTDEV, ROOTINO);
 	if(rp == 0){
 		return -1;
 	} else if(rp->inum == rootdir->inum){

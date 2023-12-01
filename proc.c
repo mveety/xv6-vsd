@@ -20,7 +20,7 @@ struct {
 
 static struct proc *initproc;
 
-int nextpid = 1;
+int nextpid = 0;
 extern void forkret(void);
 extern void trapret(void);
 extern int booted;
@@ -103,6 +103,7 @@ userinit(void)
 	struct proc *p;
 	extern char _binary_initcode_start[], _binary_initcode_size[];
 
+	cprintf("cpu%d: starting init\n", cpu->id);
 	p = allocproc();
 	initproc = p;
 	if((p->pgdir = setupkvm()) == 0)
@@ -119,10 +120,40 @@ userinit(void)
 	p->tf->eip = 0;  // beginning of initcode.S
 	p->uid = -1;
 	p->sid = -1;
-	safestrcpy(p->name, "initcode", sizeof(p->name));
+	safestrcpy(p->name, "userinit", sizeof(p->name));
+	p->rootdir = nil;
 	p->cwd = namei("/");
 	p->state = RUNNABLE;
 	booted = 1;	// we consider the system booted when initproc is set
+}
+
+void
+kernelinit(void)
+{
+	struct proc *p;
+	extern char _binary_initkern_start[], _binary_initkern_size[];
+
+	cprintf("cpu%d: starting kernel proc\n", cpu->id);
+	p = allocproc();
+	initproc = p;
+	if((p->pgdir = setupkvm()) == 0)
+		panic("kernelinit: out of memory?");
+	inituvm(p->pgdir, _binary_initkern_start, (int)_binary_initkern_size);
+	p->sz = PGSIZE;
+	memset(p->tf, 0, sizeof(*p->tf));
+	p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
+	p->tf->ds = (SEG_UDATA << 3) | DPL_USER;
+	p->tf->es = p->tf->ds;
+	p->tf->ss = p->tf->ds;
+	p->tf->eflags = FL_IF;
+	p->tf->esp = PGSIZE;
+	p->tf->eip = 0;  // beginning of initcode.S
+	p->uid = -1;
+	p->sid = -1;
+	safestrcpy(p->name, "kernel", sizeof(p->name));
+	p->rootdir = nil;
+	p->cwd = nil;
+	p->state = RUNNABLE;
 }
 
 // Grow current process's memory by n bytes.
@@ -187,6 +218,8 @@ fork(void)
 	for(i = 0; i < NOFILE; i++)
 		if(proc->ofile[i])
 			np->ofile[i] = filedup(proc->ofile[i]);
+
+	np->rootdir = idup(proc->rootdir);
 	np->cwd = idup(proc->cwd);
 	np->threadi = 0;
 
@@ -292,6 +325,7 @@ tfork(void)
 	for(i = 0; i < NOFILE; i++)
 		if(proc->ofile[i])
 			np->ofile[i] = filedup(proc->ofile[i]);
+	np->rootdir = idup(proc->rootdir);
 	np->cwd = idup(proc->cwd);
 	safestrcpy(np->name, proc->name, sizeof(proc->name));
 	pid = np->pid;
@@ -358,6 +392,7 @@ clone(uint stack)
 	for(i = 0; i < NOFILE; i++)
 		if(proc->ofile[i])
 			np->ofile[i] = filedup(proc->ofile[i]);
+	np->rootdir = idup(proc->rootdir);
 	np->cwd = idup(proc->cwd);
 	safestrcpy(np->name, proc->name, sizeof(proc->name));
 	pid = np->pid;
@@ -634,12 +669,13 @@ forkret(void)
 	// Still holding ptable.lock from scheduler.
 	release(&ptable.lock);
 
-	if (first) {
+	if (first && proc->pid == 0) {
 		// Some initialization functions must be run in the context
 		// of a regular process (e.g., they call sleep), and thus cannot 
 		// be run from main().
-		first = 0;
+		// fire up the filesystem
 		fsinit(ROOTDEV);
+		first = 0;
 	}
 	
 	// Return to "caller", actually trapret (see allocproc).

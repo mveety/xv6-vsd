@@ -56,6 +56,7 @@ struct devsw {
 };
 
 extern struct devsw devsw[];
+extern struct inode *rootdir;
 
 #define CONSOLE 1
 

@@ -14,6 +14,8 @@ bootblock
 entryother
 initcode
 initcode.out
+initkern
+initkern.out
 kernel
 kernelmemfs
 mkfs

@@ -25,6 +25,7 @@ static void itrunc(struct inode*);
 static int bmap_g(struct inode*, uint, int);
 struct superblock sb;   // there should be one per dev, but we run with one dev
 int havesysfs = 0;
+struct inode *rootdir;
 
 // Read the super block.
 void
@@ -182,6 +183,7 @@ fsinit(int dev)
 {
 	iinit(dev);
 	initlog(dev);
+	rootdir = iget(dev, ROOTINO);
 }
 
 void
@@ -293,9 +295,11 @@ iget(uint dev, uint inum)
 struct inode*
 idup(struct inode *ip)
 {
-	acquire(&icache.lock);
-	ip->ref++;
-	release(&icache.lock);
+	if(ip != nil){
+		acquire(&icache.lock);
+		ip->ref++;
+		release(&icache.lock);
+	}
 	return ip;
 }
 
@@ -308,7 +312,7 @@ ilock(struct inode *ip)
 	struct dinode *dip;
 
 	if(ip == 0 || ip->ref < 1){
-		cprintf("error: fs: inode has negative refs or does not exist. run fsck.\n");
+		cprintf("error: fs: inode &%p has negative refs or does not exist. run fsck.\n", ip);
 		return;
 	}
 
@@ -341,7 +345,7 @@ void
 iunlock(struct inode *ip)
 {
 	if(ip == 0 || !(ip->flags & I_BUSY) || ip->ref < 1){
-		cprintf("error: fs: inode has negative refs or does not exist. run fsck.\n");
+		cprintf("error: fs: inode &%p has negative refs or does not exist. run fsck.\n", ip);
 		return;
 	}
 
@@ -663,10 +667,16 @@ namex(char *path, int nameiparent, char *name)
 {
 	struct inode *ip, *next;
 
-	if(*path == '/')
+	if(proc == nil) // bootstrap init
 		ip = iget(ROOTDEV, ROOTINO);
 	else
-		ip = idup(proc->cwd);
+		if(*path == '/'){
+			if(proc->rootdir == nil)
+					ip = idup(rootdir);
+			else
+				ip = idup(proc->rootdir);
+		} else
+			ip = idup(proc->cwd);
 
 	while((path = skipelem(path, name)) != 0){
 		ilock(ip);

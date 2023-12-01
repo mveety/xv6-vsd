@@ -49,6 +49,7 @@ main(void)
 	sysctl_init();  // /dev/sysctl
 	sysname_init(); // /dev/sysname
 	muxinit();		// /dev/mux*
+	kernelinit();	// kernel process
 	userinit();      // first user process
 	// Finish setting up this processor in mpmain.
 	mpmain();

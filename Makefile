@@ -108,8 +108,14 @@ initcode: initcode.S
 	$(OBJCOPY) -S -O binary initcode.out initcode
 	$(OBJDUMP) -S initcode.o > initcode.asm
 
-kernel.elf: $(OBJS) entry.o entryother initcode kernel.ld
-	$(LD) $(LDFLAGS) -T kernel.ld -o kernel.elf entry.o $(OBJS) -b binary initcode entryother
+initkern: initkern.S
+	$(CC) $(CFLAGS) -nostdinc -I. -c initkern.S
+	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o initkern.out initkern.o
+	$(OBJCOPY) -S -O binary initkern.out initkern
+	$(OBJDUMP) -S initkern.o > initkern.asm
+
+kernel.elf: $(OBJS) entry.o entryother initcode initkern kernel.ld
+	$(LD) $(LDFLAGS) -T kernel.ld -o kernel.elf entry.o $(OBJS) -b binary initcode initkern entryother
 	$(OBJDUMP) -t kernel.elf | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
 	$(OBJCOPY) --only-keep-debug kernel.elf kernel.dsyms
 
@@ -219,7 +225,7 @@ clean:
 	*.o *.d *.asm *.sym *.dsyms bootblock entryother mkfs_vsd \
 	initcode initcode.out kernel.bin kernel.elf xv6.img \
 	fs.img kernelmemfs mkfs .gdbinit libc.a vsdmbr bootelf \
-	*.o_ bootbin $(UPROGS)
+	*.o_ bootbin initkern initkern.out $(UPROGS)
 
 fsclean:
 	rm -f mkfs_vsd mkfs fs.img
