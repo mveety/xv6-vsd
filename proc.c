@@ -803,14 +803,14 @@ procdump(void)
 			else
 				state = "???";
 			if(p->type == PROCESS)
-				totalmem += p->sz;
+				totalmem += p->sz/PGSIZE;
 			cprintf("%d: %s, %s, %s, %u, %d, %d, %d, %d\n", p->pid,
 					p->type == THREAD ? "thread" : "process", state, 
-					p->name, p->sz, p->uid, p->parent != nil ? p->parent->pid : 0,
+					p->name, p->sz/PGSIZE, p->uid, p->parent != nil ? p->parent->pid : 0,
 					p->threadi, p->waitrounds);
 		}
 	}
-	cprintf("MEMORY USED: %u bytes\n", totalmem);
+	cprintf("MEMORY USED: %u pages\n", totalmem);
 }
 
 // werrstr copies buf to proc->errstr, sets p->errset, and returns
