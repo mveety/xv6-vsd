@@ -41,7 +41,7 @@ OBJS = \
 # If the makefile can't find QEMU, specify its path here
 QEMU = qemu-system-i386
 
-ARCH=i686
+ARCH=i386
 XV6DIR = $(shell pwd)
 MKFSCC = /usr/bin/clang
 CC = $(TOOLPREFIX)gcc
@@ -219,6 +219,9 @@ fs.img: mkfs_vsd $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
 	./mkfs_vsd fs.img VSDSYS $(UPROGS) kernel.elf kernel.bin bootelf bootbin @passwd @devices @rc @motd
 	dd if=vsdmbr of=fs.img conv=notrunc
 
+fs.qcow: fs.img
+	qemu-img convert -O qcow2 fs.img fs.qcow
+
 -include *.d
 
 clean: 
@@ -226,7 +229,7 @@ clean:
 	*.o *.d *.asm *.sym *.dsyms bootblock entryother mkfs_vsd \
 	initcode initcode.out kernel.bin kernel.elf xv6.img \
 	fs.img kernelmemfs mkfs .gdbinit libc.a vsdmbr bootelf \
-	*.o_ bootbin initkern initkern.out $(UPROGS)
+	*.o_ bootbin initkern initkern.out fs.qcow $(UPROGS)
 
 fsclean:
 	rm -f mkfs_vsd mkfs fs.img

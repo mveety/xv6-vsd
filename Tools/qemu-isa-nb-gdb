@@ -1,0 +1,23 @@
+#!/bin/sh
+
+if [ "$#" != "1" ] ; then
+	CPUS=1
+	MEM=256
+else
+	echo "only supports 1 cpu"
+	CPUS=1
+	MEM=256
+fi
+
+if [ "$#" != '2' ]; then
+	CPUS=1
+	MEM=256
+else
+	echo "only supports 1 cpu"
+	CPUS=1
+	MEM=$2
+fi
+
+qemu-system-i386 -serial mon:stdio -hda fs.img -smp $CPUS -m $MEM \
+					-no-reboot -no-shutdown -d cpu_reset -S -s \
+					-machine isapc -cpu 486
