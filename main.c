@@ -20,20 +20,25 @@ extern char end[]; // first address after kernel loaded from ELF file
 int
 main(void)
 {
+	char *p;
+
 	singleuser = 1; // boot into single user mode initally
-	sysuart = 1;    // make the uart initally print messages
 	booted = 0;
 	cgamove(1, 0);
+	cgaprintstr("xv6...\n");
+	consoleinit1();   // I/O devices
 	kinit1(end, P2V(4*1024*1024)); // phys page allocator
 	kvmalloc();      // kernel page table
+	cprintf("starting vsd release 1\n");
 	mpinit();        // collect info about this machine
 	lapicinit();
+	cprintf("mpinit: found %d processors\n", ncpu);
 	seginit();       // set up segments
-	cprintf("\ncpu%d: starting vsd release 1\n", cpu->id);
 	picinit();       // interrupt controller
 	ioapicinit();    // another interrupt controller
-	consoleinit();   // I/O devices & their interrupts
+	consoleinit2();   // I/O device's interrupts
 	uartinit();      // serial port
+	sysuart = 1;    // make the uart initally print messages
 	pinit();         // process table
 	tvinit();        // trap vectors
 	if(!ismp){

@@ -31,11 +31,14 @@ void            brelse(struct buf*);
 void            bwrite(struct buf*);
 
 // console.c
-void            consoleinit(void);
+void            consoleinit1(void);
+void            consoleinit2(void);
 void            cprintf(char*, ...);
 void            consoleintr(int(*)(void), struct inputbuf*);
 void            panic(char*) __attribute__((noreturn));
 void			cgamove(int, int);
+void			cgaputc(int);
+void			cgaprintstr(char*);
 
 // exec.c
 int             exec(char*, char**);

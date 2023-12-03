@@ -144,7 +144,7 @@ cgamove(int row, int col)
 	outb(CRTPORT+1, (u8int)((pos>>8)&0xff));
 }
 
-static void
+void
 cgaputc(int c)
 {
 	int pos;
@@ -176,6 +176,15 @@ cgaputc(int c)
 	outb(CRTPORT, 15);
 	outb(CRTPORT+1, pos);
 	crt[pos] = ' ' | 0x0700;
+}
+
+void
+cgaprintstr(char *c)
+{
+	char *p;
+
+	for(p = c; *p; p++)
+		cgaputc(*p);
 }
 
 void
@@ -299,16 +308,19 @@ consolewrite(struct inode *ip, char *buf, int n, int off)
 }
 
 void
-consoleinit(void)
+consoleinit1(void)
 {
 	initlock(&cons.lock, "console");
 
 	input.iputc = &cgaputc;
 	devsw[CONSOLE].write = consolewrite;
 	devsw[CONSOLE].read = consoleread;
-	cons.locking = 1;
+}
 
+void
+consoleinit2(void)
+{
+	cons.locking = 1;
 	picenable(IRQ_KBD);
 	ioapicenable(IRQ_KBD, 0);
 }
-

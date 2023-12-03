@@ -1,3 +1,4 @@
+
 // Multiprocessor support
 // Search memory for MP description structures.
 // http://developer.intel.com/design/pentium/datashts/24201606.pdf
@@ -106,8 +107,10 @@ mpinit(void)
 	struct mpioapic *ioapic;
 
 	bcpu = &cpus[0];
-	if((conf = mpconfig(&mp)) == 0)
+	if((conf = mpconfig(&mp)) == 0){
+		cprintf("mpinit: no smp\n");
 		return;
+	}
 	ismp = 1;
 	lapic = (uint*)conf->lapicaddr;
 	for(p=(uchar*)(conf+1), e=(uchar*)conf+conf->length; p<e; ){
@@ -141,6 +144,7 @@ mpinit(void)
 	}
 	if(!ismp){
 		// Didn't like what we found; fall back to no MP.
+		cprintf("mpinit: ncpu=1 apicid=nil\n");
 		ncpu = 1;
 		lapic = 0;
 		ioapicid = 0;

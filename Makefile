@@ -41,6 +41,7 @@ OBJS = \
 # If the makefile can't find QEMU, specify its path here
 QEMU = qemu-system-i386
 
+ARCH=i686
 XV6DIR = $(shell pwd)
 MKFSCC = /usr/bin/clang
 CC = $(TOOLPREFIX)gcc
@@ -49,11 +50,11 @@ LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 #CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
-CFLAGS = -march=i386 -fno-pic -static -fno-builtin -fno-strict-aliasing -fvar-tracking -Wno-unused-variable -fplan9-extensions
+CFLAGS = -march=$(ARCH) -fno-pic -static -fno-builtin -fno-strict-aliasing -fvar-tracking -Wno-unused-variable -fplan9-extensions
 CFLAGS += -fvar-tracking-assignments -O0 -g -Wall -MD -gdwarf-2 -m32 -Werror -fno-omit-frame-pointer
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 CFLAGS += -std=gnu99 -I./
-ASFLAGS = -march=i386 -m32 -gdwarf-2 -Wa,-divide
+ASFLAGS = -march=$(ARCH) -m32 -gdwarf-2 -Wa,-divide
 # FreeBSD ld wants ``elf_i386_fbsd'' no it doesn't.
 #LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null)
 # backport from stable
