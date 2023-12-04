@@ -1,10 +1,20 @@
 #include <libc.h>
 
+/*
+this leaks.
+*/
+
+typedef enum {
+	THREAD,
+	PROCESS,
+} thread_type;
+
 typedef struct Thread Thread;
 typedef struct Threadstate Threadstate;
 
 struct Thread {
 	int pid;
+	thread_type type;
 	void *stack;
 	Thread *next;
 };
@@ -77,6 +87,8 @@ spawn(void (*entry)(void*), void *args)
 		exit();
 	}
 	new->pid = 0;
+	new->type = THREAD;
+
 	if(_threads_useclone){
 		unlock(_thread_state->lock);
 		if(new->stack == nil){
@@ -110,6 +122,37 @@ spawn(void (*entry)(void*), void *args)
 			return -1;
 		}
 	}
+	new->pid = tpid;
+	return tpid;
+}
+
+int
+pspawn(void (*entry)(void*), void *args)
+{
+	int tpid;
+	Thread *new;
+
+	lock(_thread_state->lock);
+	if((new = _vsd_allocate_thread()) == nil){
+		printf(2, "threads: panic: unable to allocate new process\n");
+		unlock(_thread_state->lock);
+		exit();
+	}
+	new->pid = 0;
+	new->type = PROCESS;
+
+	unlock(_thread_state->lock);
+	switch(tpid = fork()){
+	case 0:
+		_vsd_threadentry(new, entry, args);
+		exit();
+		break;
+	case -1:
+		printf(2, "threads: fork: unable to spawn new process\n");
+		new->pid = -1;
+		return -1;
+	}
+
 	new->pid = tpid;
 	return tpid;
 }

@@ -224,31 +224,18 @@ usage(void)
 }
 
 void
-daemon(void)
+do_update(void*)
 {
-	void *cstk;
+	printf(1, "devd: scanning /etc/devices\n");
+	run();
+}
 
-	cstk = malloc(4096);
-	if(!cstk){
-		printf(2, "devd: could not allocate child stack\n");
-		exit();
-	}
+void
+daemon(void*)
+{
 	for(;;){
 		sleep(600);
-		switch(clone((uint)cstk)){
-		case 0:
-			printf(1, "devd: scanning /etc/devices\n");
-			close(1);
-			run();
-			exit();
-			break;
-		case -1:
-			printf(2, "devd: error: could not fork: %r\n");
-			exit();
-		default:
-			wait();
-			break;
-		}
+		do_update(nil);
 	}
 }
 
@@ -293,18 +280,8 @@ main(int argc, char *argv[])
 		run();
 		exit();
 	}
-	switch(pid = fork()){
-	case 0:
-		daemon();
-		break;
-	case -1:
-		printf(2, "devd: could not fork off daemon: %r\n");
-		exit();
-	default:
-		printf(1, "devd: made background thread (pid = %d)\n", pid);
-		run();
-		exit();
-	}
+	run();
+	pid = pspawn(&daemon, nil);
+	printf(1, "devd: made background process (pid = %d)\n", pid);
 	return 0;
 }
-
