@@ -21,7 +21,7 @@ Threadstate *_thread_state;
 void
 _vsd_threadstart(void)
 {
-	_threads_useclone = 1;
+	_threads_useclone = 0;
 	_thread_state = mallocz(sizeof(Threadstate));
 	if(_thread_state == nil){
 		printf(2, "threads: unable to initialize\n");
@@ -98,6 +98,7 @@ spawn(void (*entry)(void*), void *args)
 			return -1;
 		}
 	} else {
+		unlock(_thread_state->lock);
 		switch(tpid = fork()){
 		case 0:
 			_vsd_threadentry(new, entry, args);

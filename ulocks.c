@@ -16,6 +16,19 @@ cmpswp(volatile uint *ptr, uint new)
 	return res;
 }
 
+int
+initlock(Lock *l, char *name)
+{
+	if(name != nil)
+		l->name = strdup(name);
+	if(l->name == nil && name != nil){
+		free(l);
+		seterr(EUALLOCFAIL);
+		return -1;
+	}
+	return 0;
+}
+
 Lock*
 makelock(char *name)
 {
@@ -24,13 +37,8 @@ makelock(char *name)
 	l = mallocz(sizeof(Lock));
 	if(l == nil)
 		return nil;
-	if(name != nil)
-		l->name = strdup(name);
-	if(l->name == nil && name != nil){
-		free(l);
-		seterr(EUALLOCFAIL);
+	if(initlock(l, name) < 0)
 		return nil;
-	}
 	return l;
 }
 

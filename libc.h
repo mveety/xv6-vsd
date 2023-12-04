@@ -168,6 +168,7 @@ void* mallocz(uint);	// malloc and zero memory
 
 // ulocks.c
 Lock *makelock(char*);
+int initlock(Lock*, char*);
 void freelock(Lock*);
 int lock(Lock*);
 int unlock(Lock*);
@@ -187,6 +188,7 @@ typedef struct Message Message;
 
 struct Mailbox {
 	uint messages;
+	Lock;
 	Message *head;
 	Message *cur;
 };

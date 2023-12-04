@@ -125,16 +125,19 @@ receive(Mailbox *mbox)
 	Message *msg;
 
 	if(mbox != nil){
+		lock(mbox);
 		if(mbox->cur == nil){
 			msg = recv1();
 			msg->next = mbox->head;
 			mbox->head = msg;
 			mbox->cur = msg;
 			mbox->messages++;
+			unlock(mbox);
 			return msg;
 		}
 		msg = mbox->cur;
 		mbox->cur = mbox->cur->next;
+		unlock(mbox);
 		return msg;
 	}
 	msg = recv1();
@@ -148,19 +151,25 @@ selectmsg(Mailbox *mbox, Message *msg)
 	Message *cur = nil;
 	Message *prev = nil;
 
-	for(cur = mbox->head; cur != nil; cur = cur->next){
-		if(cur == msg){
-			if(prev == nil)
-				mbox->head = cur->next;
-			else
-				prev->next = cur->next;
-			if(msg == mbox->cur)
-				mbox->cur = cur->next;
-			mbox->messages--;
-			msg->next = nil;
-			return;
+	if(mbox){
+		lock(mbox);
+		for(cur = mbox->head; cur != nil; cur = cur->next){
+			if(cur == msg){
+				if(prev == nil)
+					mbox->head = cur->next;
+				else
+					prev->next = cur->next;
+				if(msg == mbox->cur)
+					mbox->cur = cur->next;
+				mbox->messages--;
+				msg->next = nil;
+				if(mbox)
+					unlock(mbox);
+				return;
+			}
+			prev = cur;
 		}
-		prev = cur;
+		unlock(mbox);
 	}
 }
 
@@ -183,6 +192,7 @@ flush(Mailbox *mbox)
 	cur = mbox->head;
 	if(cur == nil)
 		return;
+	lock(mbox);
 	for(;;){
 		prev = cur;
 		cur = cur->next;
@@ -194,6 +204,7 @@ flush(Mailbox *mbox)
 		if(cur == nil)
 			break;
 	}
+	unlock(mbox);
 }
 
 Mailbox*
@@ -204,5 +215,6 @@ mailbox(void)
 	new = mallocz(sizeof(Mailbox));
 	if(!new)
 		msgpanic("bad malloc");
+	initlock(new, "mailbox lock");
 	return new;
 }

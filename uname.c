@@ -29,8 +29,10 @@ main(int argc, char *argv[])
 
 	progname = argv[0];
 	os = 0;
-	if(argc < 2)
+	if(argc < 2){
+		os = 1;
 		printuname();
+	}
 	argvlen = strlen(argv[1]);
 	x = argv[1];
 	if(x[0] == '-')
