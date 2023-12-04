@@ -28,7 +28,7 @@ main(int argc, char *argv[])
 	int i = 0;
 
 	progname = argv[0];
-	os = 1;
+	os = 0;
 	if(argc < 2)
 		printuname();
 	argvlen = strlen(argv[1]);
@@ -40,7 +40,7 @@ main(int argc, char *argv[])
 		case 'a':
 			kern = ver = node = rel = mach = proc = plat = os = 1;
 			printuname();
-			break;
+			return 0;
 		case 's':
 			kern = 1;
 			break;

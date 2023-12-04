@@ -32,6 +32,8 @@ main(void)
 	cprintf("starting vsd release 1\n");
 	mpinit();        // collect info about this machine
 	lapicinit();
+	if(!ismp)
+		ncpu = 1;
 	cprintf("mpinit: found %d processors\n", ncpu);
 	seginit();       // set up segments
 	picinit();       // interrupt controller
