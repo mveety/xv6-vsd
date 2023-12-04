@@ -17,10 +17,10 @@ bootmain(void)
 	int i = 0;
 
 	// malloc is for bitches
-	fsbuf = (void*)0x10000;
-	dn = (void*)0x10300;
-	addrs = (void*)0x10600;
-	bootelf = (void*)0x600000;
+	fsbuf = (void*)0x8000; // 0x10000
+	dn = (void*)0x8300; // 0x10300
+	addrs = (void*)0x8600; // 0x10600
+	bootelf = (void*)0x9000; // 0x600000
 	readsect(fsbuf, 1);
 	sb = (struct superblock*)fsbuf;
 	readsect(dn, ((sb->bootinode) / IPB + sb->inodestart));
