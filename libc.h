@@ -208,4 +208,9 @@ int freemsg(Message*);
 void flush(Mailbox*);
 Mailbox *mailbox(void);
 
+// args.c
+int args(int argc, char *argv[], int *flags, char *options);
+char *argf(int argc, char *argv[], char c);
+int lastarg(int argc, char *argv[], char *opts);
+
 #endif

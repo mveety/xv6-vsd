@@ -148,7 +148,8 @@ qemu-nb-gdb: sysall
 bochs: sysall
 	bochs -q -f xv6-vsd.cfg
 
-ULIB = ulib.o usys.o printf.o umalloc.o user_string.o ulocks.o uthread.o sprintf.o message.o
+ULIB = ulib.o usys.o printf.o umalloc.o user_string.o ulocks.o uthread.o \
+	sprintf.o message.o args.o
 
 libc.a: $(ULIB)
 	ar -rc libc.a $(ULIB)
@@ -214,6 +215,7 @@ UPROGS=\
 	_msgtest\
 	_malloctest\
 	_clonemalloc\
+	_argstest\
 
 fs.img: mkfs_vsd $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
 	./mkfs_vsd fs.img VSDSYS $(UPROGS) kernel.elf kernel.bin bootelf bootbin @passwd @devices @rc @motd
