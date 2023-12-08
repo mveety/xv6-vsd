@@ -62,14 +62,3 @@ struct dirent {
 	char name[DIRSIZ];
 };
 
-#define DRIVER_INUSE 1
-
-struct disk {
-	u16int flags;
-	u16int driver_flags;
-	uint driver_device;
-	void (*diskrw)(struct buf*);
-	void *aux;
-};
-
-extern struct disk disks[DISKMAX];

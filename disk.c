@@ -10,6 +10,16 @@
 #include "mmu.h"
 #include "proc.h"
 
+#define DRIVER_INUSE 1
+
+struct disk {
+	u16int flags;
+	u16int driver_flags;
+	uint driver_device;
+	void (*diskrw)(struct buf*);
+	void *aux;
+};
+
 struct disk disks[DISKMAX];
 
 int
