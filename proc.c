@@ -513,7 +513,7 @@ wait1(void)
 			if(p->parent != proc)
 				continue;
 			havekids = 1;
-			if(p->state == ZOMBIE && p->type == PROCESS){
+			if(p->state == ZOMBIE && p->type == PROCESS && !p->crashed){
 				// Found one.
 				pid = p->pid;
 				kfree(p->kstack);
@@ -531,6 +531,13 @@ wait1(void)
 				p->parent = 0;
 				p->name[0] = 0;
 				p->killed = 0;
+				release(&ptable.lock);
+				return pid;
+			}
+			if(p->state == ZOMBIE && p->type == PROCESS && p->crashed){
+				// uh oh
+				pid = p->pid;
+				p->state = CRASHED;
 				release(&ptable.lock);
 				return pid;
 			}
@@ -805,6 +812,7 @@ procdump(void)
 	[ZOMBIE]    "zombie\0",
 	[MSGWAIT]   "msgwait\0",
 	[WAIT]		"wait\0",
+	[CRASHED]	"crashed\0",
 	};
 	int i;
 	struct proc *p;

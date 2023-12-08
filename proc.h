@@ -82,6 +82,7 @@ enum procstate {
 	RUNNABLE,	// can run next scheduler round
 	RUNNING,	// currently running
 	ZOMBIE,		// waiting for parent to wait()
+	CRASHED,	// parent caught wait, but keep the corpse around
 };
 enum proctype { PROCESS, THREAD };
 
@@ -102,6 +103,7 @@ struct proc {
 	struct context *context;     // swtch() here to run process
 	void *chan;                  // If non-zero, sleeping on chan
 	int killed;                  // If non-zero, have been killed
+	int crashed;				 // if non-zero the proc crashed
 	struct file *ofile[NOFILE];  // Open files
 	struct inode *rootdir;       // the root directory inode
 // TODO: this is total shit. write inode2path

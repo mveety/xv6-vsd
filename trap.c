@@ -95,6 +95,7 @@ trap(struct trapframe *tf)
 						proc->pid, proc->name, tf->trapno, tf->err, cpu->id, tf->eip, 
 						rcr2());
 		proc->killed = 1;
+		proc->crashed = 1;
 	}
 
 	// Force process exit if it has been killed and is in user space.
