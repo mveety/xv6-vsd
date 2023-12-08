@@ -14,19 +14,19 @@
 
 extern uchar _binary_fs_img_start[], _binary_fs_img_size[];
 
-static int disksize;
+static int memdisk_size;
 static uchar *memdisk;
 
 void
-ideinit(void)
+mem_ideinit(void)
 {
 	memdisk = _binary_fs_img_start;
-	disksize = (uint)_binary_fs_img_size/BSIZE;
+	memdisk_size = (uint)_binary_fs_img_size/BSIZE;
 }
 
 // Interrupt handler.
 void
-ideintr(void)
+mem_ideintr(void)
 {
 	// no-op
 }
@@ -35,7 +35,7 @@ ideintr(void)
 // If B_DIRTY is set, write buf to disk, clear B_DIRTY, set B_VALID.
 // Else if B_VALID is not set, read buf from disk, set B_VALID.
 void
-iderw(struct buf *b)
+mem_iderw(struct buf *b)
 {
 	uchar *p;
 
@@ -45,7 +45,7 @@ iderw(struct buf *b)
 		panic("iderw: nothing to do");
 	if(b->dev != 1)
 		panic("iderw: request not for disk 1");
-	if(b->blockno >= disksize)
+	if(b->blockno >= memdisk_size)
 		panic("iderw: block out of range");
 
 	p = memdisk + b->blockno*BSIZE;

@@ -33,6 +33,7 @@ OBJS = \
 	bitbucket.o\
 	devsysctl.o\
 	kfields.o\
+	disk.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf

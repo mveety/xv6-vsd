@@ -3,7 +3,6 @@
 
 
 #define ROOTINO 1  // root i-number
-// i bumped the block size from 512 up to 1024
 #define BSIZE 512  // block size
 
 // Disk layout:
@@ -63,3 +62,14 @@ struct dirent {
 	char name[DIRSIZ];
 };
 
+#define DRIVER_INUSE 1
+
+struct disk {
+	u16int flags;
+	u16int driver_flags;
+	uint driver_device;
+	void (*diskrw)(struct buf*);
+	void *aux;
+};
+
+extern struct disk disks[DISKMAX];

@@ -254,6 +254,19 @@ int uid2name(int, char*, int);
 // converts uname to uid (uname, returned uid)
 int name2uid(char*, int*);
 
+// disk.c
+// is the device registered
+int realdisk_exists(uint);
+// get the driver specific device id
+uint realdisk(uint);
+// get and set driver specific flags
+u16int *diskflags(uint);
+// manage disks
+uint register_disk(uint, void (*realrw)(struct buf*), void*);
+int unregister_disk(uint);
+// the method
+void diskrw(struct buf*);
+
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 // for 9front compatibility
@@ -264,4 +277,3 @@ int name2uid(char*, int*);
 
 #define Lock(a) acquire(&a)
 #define Unlock(a) release(&a)
-

@@ -114,7 +114,7 @@ bread(uint dev, uint blockno)
 
 	b = bget(dev, blockno);
 	if(!(b->flags & B_VALID)) {
-		iderw(b);
+		diskrw(b);
 	}
 	return b;
 }
@@ -126,7 +126,7 @@ bwrite(struct buf *b)
 	if((b->flags & B_BUSY) == 0)
 		panic("bwrite");
 	b->flags |= B_DIRTY;
-	iderw(b);
+	diskrw(b);
 }
 
 // Release a B_BUSY buffer.

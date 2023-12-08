@@ -60,6 +60,7 @@ void
 ideinit(void)
 {
 	int i;
+	uint diskid;
 	
 	initlock(&idelock, "ide");
 	cprintf("cpu%d: driver: starting ide\n", cpu->id);
@@ -80,12 +81,16 @@ ideinit(void)
 	outb(0x1f6, 0xe0 | (0<<4));
 	devsw[6].read = ide_read;
 	devsw[6].write = ide_write;
+	diskid = register_disk(0, &iderw, nil);
+	cprintf("cpu%d: ide: registered boot disk as disk%d\n", cpu->id, diskid);
 }
 
 // Start the request for b.  Caller must hold idelock.
 static void
 idestart(struct buf *b)
 {
+	uint realdev;
+
 	if(b == 0)
 		panic("idestart");
 	if(b->blockno >= FSSIZE){
@@ -96,14 +101,15 @@ idestart(struct buf *b)
 	int sector = b->blockno * sector_per_block;
 
 	if (sector_per_block > 7) panic("idestart");
-	
+
+	realdev = realdisk(b->dev);
 	idewait(0);
 	outb(0x3f6, 0);  // generate interrupt
 	outb(0x1f2, sector_per_block);  // number of sectors
 	outb(0x1f3, sector & 0xff);
 	outb(0x1f4, (sector >> 8) & 0xff);
 	outb(0x1f5, (sector >> 16) & 0xff);
-	outb(0x1f6, 0xe0 | ((b->dev&1)<<4) | ((sector>>24)&0x0f));
+	outb(0x1f6, 0xe0 | ((realdev&1)<<4) | ((sector>>24)&0x0f));
 	if(b->flags & B_DIRTY){
 		outb(0x1f7, IDE_CMD_WRITE);
 		outsl(0x1f0, b->data, BSIZE/4);
@@ -144,7 +150,7 @@ ideintr(void)
 }
 
 //PAGEBREAK!
-// Sync buf with disk. 
+// Sync buf with disk.
 // If B_DIRTY is set, write buf to disk, clear B_DIRTY, set B_VALID.
 // Else if B_VALID is not set, read buf from disk, set B_VALID.
 void
@@ -156,8 +162,6 @@ iderw(struct buf *b)
 		panic("iderw: buf not busy");
 	if((b->flags & (B_VALID|B_DIRTY)) == B_VALID)
 		panic("iderw: nothing to do");
-	if(b->dev != 0 && !havedisk1)
-		panic("iderw: ide disk 1 not present");
 
 	acquire(&idelock);  //DOC:acquire-lock
 
