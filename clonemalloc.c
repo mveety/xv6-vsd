@@ -22,6 +22,7 @@ main(int argc, char *argv[])
 {
 	int cpid;
 
+	_threads_useclone = 1; // make sure clone is enabled
 	a = makelock(nil);
 	b = makelock(nil);
 	c = makelock(nil);
