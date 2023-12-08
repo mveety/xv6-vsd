@@ -100,6 +100,7 @@ void            kbdintr(void);
 void            cmostime(struct rtcdate *r);
 int             cpunum(void);
 extern volatile uint*    lapic;
+int				lapicid(void);
 void            lapiceoi(void);
 void            lapicinit(void);
 void            lapicstartap(uchar, uint);
@@ -133,6 +134,8 @@ int             pipewrite(struct pipe*, char*, int);
 
 //PAGEBREAK: 16
 // proc.c
+int				cpuid(void);
+struct cpu*		mycpu(void);
 struct proc*    copyproc(struct proc*);
 void            exit(void);
 int             fork(void);

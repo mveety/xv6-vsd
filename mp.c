@@ -18,12 +18,6 @@ int ismp;
 int ncpu;
 uchar ioapicid;
 
-int
-mpbcpu(void)
-{
-	return bcpu-cpus;
-}
-
 static uchar
 sum(uchar *addr, int len)
 {
@@ -97,6 +91,7 @@ mpconfig(struct mp **pmp)
 	return conf;
 }
 
+// changes imported from xv6
 void
 mpinit(void)
 {
@@ -117,14 +112,11 @@ mpinit(void)
 		switch(*p){
 		case MPPROC:
 			proc = (struct mpproc*)p;
-			if(ncpu != proc->apicid){
-				cprintf("mpinit: ncpu=%d apicid=%d\n", ncpu, proc->apicid);
-				ismp = 0;
+			if(ncpu < NCPU) {
+				// for reference: id == apicid in xv6 sources
+				cpus[ncpu].id = proc->apicid;  // apicid may differ from ncpu
+				ncpu++;
 			}
-			if(proc->flags & MPBOOT)
-				bcpu = &cpus[ncpu];
-			cpus[ncpu].id = ncpu;
-			ncpu++;
 			p += sizeof(struct mpproc);
 			continue;
 		case MPIOAPIC:
@@ -138,10 +130,11 @@ mpinit(void)
 			p += 8;
 			continue;
 		default:
-			cprintf("mpinit: unknown config type %x\n", *p);
 			ismp = 0;
+			break;
 		}
 	}
+
 	if(!ismp){
 		// Didn't like what we found; fall back to no MP.
 		cprintf("mpinit: ncpu=1 apicid=nil\n");
@@ -157,4 +150,4 @@ mpinit(void)
 		outb(0x22, 0x70);   // Select IMCR
 		outb(0x23, inb(0x23) | 1);  // Mask external interrupts.
 	}
-}
+  }

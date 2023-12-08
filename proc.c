@@ -42,7 +42,28 @@ pinit(void)
 	initlock(&ptable.lock, "ptable");
 }
 
-//PAGEBREAK: 32
+// imported cpuid and mycpu from xv6-public
+int
+cpuid(void) {
+	return mycpu()-cpus;
+}
+
+struct cpu*
+mycpu(void)
+{
+	int apicid, i;
+
+	if(readeflags()&FL_IF)
+		panic("mycpu called with interrupts enabled\n");
+
+	apicid = lapicid();
+	for(i = 0; i < ncpu; ++i)
+		if(cpus[i].id == apicid)
+			return &cpus[i];
+
+	panic("unknown apicid\n");
+}
+
 // Look in the process table for an UNUSED proc.
 // If found, change state to EMBRYO and initialize
 // state required to run in the kernel.
