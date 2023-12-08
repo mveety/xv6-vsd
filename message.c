@@ -32,7 +32,8 @@ marshal_message(Message *msg)
 	mmsg->len = msg->len + sizeof(int);
 
 	*sentinel = msg->sentinel;
-	memcpy(payload, msg->payload, msg->len);
+	if(msg->len > 0)
+		memcpy(payload, msg->payload, msg->len);
 	mmsg->data = fixedmsg;
 	return mmsg;
 }
