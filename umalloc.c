@@ -18,11 +18,13 @@ typedef union header Header;
 static Header base;
 static Header *freep;
 
-void
-free(void *ap)
+int
+cfree(void *ap)
 {
 	Header *bp, *p;
 
+	if(!ap)
+		return -1;
 	bp = (Header*)ap - 1;
 	for(p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
 		if(p >= p->s.ptr && (bp > p || bp < p->s.ptr))
@@ -38,6 +40,28 @@ free(void *ap)
 	} else
 		p->s.ptr = bp;
 	freep = p;
+	return 0;
+}
+
+void*
+sfree(void *ap)
+{
+	cfree(ap);
+	return nil;
+}
+
+void*
+psfree(void *ap)
+{
+	if(cfree(ap))
+		printf(2, "malloc: error: double free\n");
+	return nil;
+}
+
+void
+_free(void *ap)
+{
+	cfree(ap);
 }
 
 static Header*
@@ -53,7 +77,7 @@ morecore(uint nu)
 		return 0;
 	hp = (Header*)p;
 	hp->s.size = nu;
-	free((void*)(hp + 1));
+	_free((void*)(hp + 1));
 	return freep;
 }
 

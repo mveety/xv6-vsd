@@ -13,11 +13,13 @@ typedef struct devicedef {
 int debug = 0;
 int nodaemon = 0;
 int firstrun = 1;
+int parent;
 
 int ddi = 0;
 int nddi = 0;
 devicedef defs[256];  // should be enough for now.
 devicedef newdefs[256];
+char linebuf[256];
 
 char*
 readline(int fd)
@@ -26,21 +28,12 @@ readline(int fd)
 	char *retval;
 
 	memset(buf, 0, 128);
-	fgets(fd, buf, 128);
-	buf[strlen(buf)-1] = '\0';
+	fgets(fd, buf, 127);
+	retval = linebuf;
 	if(debug)
 		printf(2, "devd: len = %d, line = %s\n", strlen(buf), buf);
 	if(buf[0] != '\0'){
-		retval = strdup(buf);
-		if(retval == nil){
-			if(rerrstr(devd_errstr, 0)){
-				rerrstr(devd_errstr, ERRMAX);
-				printf(2, "devd: errstr = %s\n", devd_errstr);
-				exit();
-			}
-			printf(2, "devd: no errstr\n");
-			exit();
-		}
+		memcpy(retval, buf, sizeof(buf));
 		return retval;
 	}
 	return 0;
@@ -72,7 +65,7 @@ parseent(char *och)
 	char bf2[42];
 	char bf3[42];
 	int strmax = strlen(och);
-	char *ch;
+	char *ch, *fch;
 	devicedef *d;
 	int i;
 
@@ -80,7 +73,7 @@ parseent(char *och)
 		return 0;
 	if(*och == '#')
 		return 0;
-	ch = strdup(och);
+	fch = ch = strdup(och);
 	if(debug)
 		printf(2, "devd: instring = %s, instring_len = %d\n", ch, strmax);
 	d = &newdefs[nddi];
@@ -117,7 +110,7 @@ parseent(char *och)
 	newdefs[nddi].major = atoi(bf2);
 	newdefs[nddi].minor = atoi(bf3);
 	nddi++;
-	free(ch);
+	free(fch);
 	return nddi-1;
 }
 
@@ -142,17 +135,14 @@ readfile(char *fname)
 	rfnbuf = fnbuf+5;
 	for(;;){
 		bf = readline(fd);
-		if(bf == 0){
+		if(bf == 0)
 			break;
-		}
-		if(strcmp(bf, "end") == 0){
-			break;
-		}
-		if(*bf == '#'){
-			free(bf);
+			
+		if(*bf == '#')
 			continue;
-		}
-		if(*bf == 0 || *bf == '%' || *bf == '\n')
+		if(*bf == '\n')
+			continue;
+		if(strcmp(bf, "end") == 0)
 			break;
 		if(parseent(bf) < 0){
 			if(firstrun)
@@ -161,7 +151,6 @@ readfile(char *fname)
 			return -1;
 		}
 		i++;
-		free(bf);
 	}
 	close(fd);
 	if(firstrun)
@@ -211,6 +200,7 @@ run(void)
 	if(status == -1)
 		if(firstrun){
 			printf(2, "devd: processing /etc/devices failed. exiting.: %r\n");
+			send(parent, 0, nil, 0);
 			exit();
 		}
 	firstrun = 0;
@@ -234,8 +224,12 @@ void
 daemon(void*)
 {
 	for(;;){
-		sleep(600);
 		do_update(nil);
+		if(parent > 0){
+			send(parent, 0, nil, 0);
+			parent = 0;
+		}
+		sleep(80);
 	}
 }
 
@@ -280,8 +274,9 @@ main(int argc, char *argv[])
 		run();
 		exit();
 	}
-	run();
+	parent = getpid();
 	pid = pspawn(&daemon, nil);
 	printf(1, "devd: made background process (pid = %d)\n", pid);
+	receive(nil);
 	return 0;
 }

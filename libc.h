@@ -119,13 +119,17 @@ char *fgets(int, char*, int);
 uint strlen(char*);
 void* memset(void*, int, uint);
 void* malloc(uint);
-void free(void*);
+void _free(void*);
+int cfree(void*);
+void* sfree(void*);
+void* psfree(void*);
 int atoi(const char*);
 int rerrstr(char*, int);
 int werrstr(char*, int);
 int rfperms(char*);
 int wfperms(char*, int);
 
+#define free(A) (A = psfree(A));
 
 // user permissions
 #define U_READ 0x0001
