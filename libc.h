@@ -29,6 +29,14 @@ typedef u16int word;
 typedef u32int dword;
 typedef u64int qword;
 
+// other typedefs
+typedef struct dirent Dirent;
+typedef struct stat Stat;
+typedef struct RTCtime RTCtime;
+typedef struct Lock Lock;
+typedef struct Mailbox Mailbox;
+typedef struct Message Message;
+
 // from stat.h
 #define T_DIR  1   // Directory
 #define T_FILE 2   // File
@@ -82,7 +90,7 @@ int exec(char*, char**);
 int open(char*, int);
 int mknod(char*, short, short);
 int unlink(char*);
-int fstat(int fd, struct stat*);
+int fstat(int fd, Stat*);
 int link(char*, char*);
 int mkdir(char*);
 int chdir(char*);
@@ -108,7 +116,7 @@ int recvmsg(void*, int);
 int recvwait(void);
 
 // ulib.c
-int stat(char*, struct stat*);
+int stat(char*, Stat*);
 char* strcpy(char*, char*);
 void *memmove(void*, void*, int);
 char* strchr(const char*, char c);
@@ -150,12 +158,6 @@ struct Lock {
 	int pid;
 };
 
-// other typedefs
-typedef struct dirent Dirent;
-typedef struct stat Stat;
-typedef struct RTCtime RTCtime;
-typedef struct Lock Lock;
-
 // ulib.c
 char* itoa(u64int, int);
 // user_string.c
@@ -188,8 +190,6 @@ int pspawn(void (*entry)(void*), void*);
 char *sprintf(char*, ...);
 
 // message.c
-typedef struct Mailbox Mailbox;
-typedef struct Message Message;
 
 struct Mailbox {
 	uint messages;

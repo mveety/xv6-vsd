@@ -87,7 +87,7 @@ fgets(int fd, char *buf, int max)
 }
 
 int
-stat(char *n, struct stat *st)
+stat(char *n, Stat *st)
 {
 	int fd;
 	int r;

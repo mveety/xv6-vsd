@@ -20,9 +20,9 @@ fmtname(char *path)
 }
 
 static char *types[] = {
-	[T_FILE] "T_FILE",
-	[T_DIR] "T_DIR",
-	[T_DEV] "T_DEV",
+	[T_FILE] "File  ",
+	[T_DIR] "Direct",
+	[T_DEV] "Device",
 };
 
 void
@@ -30,8 +30,8 @@ ls(char *path)
 {
 	char buf[512], *p;
 	int fd;
-	struct dirent de;
-	struct stat st;
+	Dirent de;
+	Stat st;
 	
 	if((fd = open(path, 0)) <= 0){
 		printf(2, "ls: cannot open %s: %r\n", path);
@@ -61,10 +61,11 @@ ls(char *path)
 		printf(2, "\tperms = %x\n", st.perms);
 		printf(2, "};\n");
 	}
-	printf(1, "file type inode size owner perms\n");
+	printf(1, "file           type   inode size owner perms\n");
 	switch(st.type){
 	case T_FILE:
-		printf(1, "%s %d %d %d %d %x\n", fmtname(path), st.type, st.ino, st.size,
+	case T_DEV:
+		printf(1, "%s %s %d %d %d %x\n", fmtname(path), types[st.type], st.ino, st.size,
 				st.owner, st.perms);
 		break;
 	case T_DIR:
@@ -84,7 +85,7 @@ ls(char *path)
 				printf(1, "ls: cannot stat %s: %r\n", buf);
 				continue;
 			}
-			printf(1, "%s %d %d %d %d %x\n", fmtname(buf), st.type, st.ino, st.size,
+			printf(1, "%s %s %d %d %d %x\n", fmtname(buf), types[st.type], st.ino, st.size,
 					st.owner, st.perms);
 		}
 		if(rerrstr(nil, 0))
