@@ -18,5 +18,5 @@ fi
 
 qemu-system-i386 -hda fs.img -smp $CPUS -m $MEM \
 					-no-reboot -no-shutdown \
-					-serial mon:stdio \
+					-serial mon:stdio
 

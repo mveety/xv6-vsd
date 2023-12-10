@@ -17,4 +17,8 @@ else
 fi
 
 qemu-system-i386 -serial mon:stdio -hda fs.img -smp $CPUS -m $MEM \
+				-no-reboot -no-shutdown -d cpu_reset -S -s \
+				-chardev socket,id=mon0,telnet=on,server=on,port=7777,host=0.0.0.0 \
+				-mon mon0
+
 

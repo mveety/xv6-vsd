@@ -19,3 +19,4 @@ fi
 qemu-system-i386 -serial mon:stdio -hda fs.img -smp $CPUS -m $MEM \
 					-d cpu_reset -s -S
 
+
