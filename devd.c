@@ -19,7 +19,7 @@ int ddi = 0;
 int nddi = 0;
 devicedef defs[256];  // should be enough for now.
 devicedef newdefs[256];
-char linebuf[256];
+char linebuf[128];
 
 char*
 readline(int fd)
@@ -142,7 +142,7 @@ readfile(char *fname)
 			continue;
 		if(*bf == '\n')
 			continue;
-		if(strcmp(bf, "end") == 0)
+		if(bf[0] == 'e' && bf[1] == 'n' && bf[2] == 'd')
 			break;
 		if(parseent(bf) < 0){
 			if(firstrun)
