@@ -74,12 +74,11 @@ char*
 strdup(char *s)
 {
 	int slen = strlen(s);
-	char *duped = malloc(slen+2);
+	char *duped = mallocz(slen+2);
 	if(duped == nil){
 		seterr(EKNOMEM);
 		return nil;
 	}
-	memset(duped, 0, slen+2);
 	strcpy(duped, s);
 	return duped;
 }

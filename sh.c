@@ -210,6 +210,8 @@ main(int argc, char *argv[])
 	}
 	// Read and run input commands.
 	while(getcmd(buf, sizeof(buf)) >= 0){
+		if(buf[0] == '#') // comment a line out
+			continue;
 		if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
 			// Clumsy but will have to do for now.
 			// Chdir has no effect on the parent if run in the child.
