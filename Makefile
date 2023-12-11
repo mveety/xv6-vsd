@@ -124,7 +124,7 @@ kernel.elf: $(OBJS) entry.o entryother initcode initkern kernel.ld
 kernel.bin: kernel.elf
 	$(OBJCOPY) -S -O binary -j .text kernel.elf kernel.bin
 
-tags: $(OBJS) entryother.S _init
+tags:
 	etags *.S *.c
 
 vectors.o: vectors.S
