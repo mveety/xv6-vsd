@@ -468,8 +468,8 @@ exit(void)
 	}
 
 	// empty the mailbox
-//	flush_mailbox(&proc->mbox);
-//	kmfree(proc->mbox.lock);
+	flush_mailbox(&proc->mbox);
+	kmfree(proc->mbox.lock);
 	
 	acquire(&ptable.lock);
 	// Parent might be sleeping in wait().
