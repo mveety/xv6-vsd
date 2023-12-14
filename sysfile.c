@@ -207,6 +207,7 @@ sys_unlink(void)
 	struct dirent de;
 	char name[DIRSIZ], *path;
 	uint off;
+	int x;
 
 	if(argstr(0, &path) < 0)
 		return -1;
@@ -231,11 +232,11 @@ sys_unlink(void)
 		seterr(EICANTFIND);
 		goto bad;
 	}
-	if(checkinodeperm(ip, OP_UNLINK)){
+	ilock(ip);
+	if((x = checkinodeperm(ip, OP_UNLINK))){
 		seterr(EINOUNLINK);
 		goto bad;
 	}
-	ilock(ip);
 
 	if(ip->nlink < 1)
 		panic("unlink: nlink < 1");
@@ -322,6 +323,22 @@ create(char *path, short type, short major, short minor)
 }
 
 int
+canread(struct file *f, int omode)
+{
+	if(!checkfileperm(f, OP_READ))
+		return !((omode & O_WRONLY) == O_WRONLY) || ((omode & O_RDWR) == O_RDWR);
+	return 0;
+}
+
+int
+canwrite(struct file *f, int omode)
+{
+	if(!checkfileperm(f, OP_WRITE))
+		return ((omode & O_WRONLY) == O_WRONLY) || ((omode & O_RDWR) == O_RDWR);
+	return 0;
+}
+
+int
 sys_open(void)
 {
 	char *path;
@@ -376,8 +393,8 @@ sys_open(void)
 	f->type = FD_INODE;
 	f->ip = ip;
 	f->off = 0;
-	f->readable = !((omode & O_WRONLY) == O_WRONLY) || ((omode & O_RDWR) == O_RDWR);
-	f->writable = ((omode & O_WRONLY) == O_WRONLY) || ((omode & O_RDWR) == O_RDWR);
+	f->readable = canread(f, omode);
+	f->writable = canwrite(f, omode);
 	return fd;
 }
 

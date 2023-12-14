@@ -140,15 +140,15 @@ int wfperms(char*, int);
 #define free(A) (A = psfree(A));
 
 // user permissions
-#define U_READ 0x0001
-#define U_WRITE 0x0002
-#define U_EXEC 0x0004
-#define U_HIDDEN 0x0008
+#define U_READ (1<<0)
+#define U_WRITE (1<<1)
+#define U_EXEC (1<<2)
+#define U_HIDDEN (1<<3)
 // world permissions
-#define W_READ 0x0100
-#define W_WRITE 0x0200
-#define W_EXEC 0x0400
-#define W_HIDDEN 0x0800
+#define W_READ (1<<4)
+#define W_WRITE (1<<5)
+#define W_EXEC (1<<6)
+#define W_HIDDEN (1<<7)
 
 /* vsd additions */
 

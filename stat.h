@@ -9,6 +9,6 @@ struct stat {
 	short nlink; // Number of links to file
 	uint size;   // Size of file in bytes
 	short owner; // who owns me?
-	short perms; // what is he allowed to do?
+	uchar perms; // what is he allowed to do?
+	uchar attrib; // unused so far
 };
-

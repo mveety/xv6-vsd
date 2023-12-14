@@ -25,12 +25,13 @@ int
 checkfileperm(struct file *f, short op)
 {
 	int owner;
-	short perms;
+	uchar perms;
 	static char *ops[] = {
 	[OP_READ]	"OP_READ",
 	[OP_WRITE]	"OP_WRITE",
 	[OP_EXEC]	"OP_EXEC",
 	[OP_OPEN]	"OP_OPEN",
+	[OP_UNLINK] "OP_UNLINK",
 	};
 
 	owner = f->ip->owner;
@@ -77,8 +78,8 @@ checkfileperm(struct file *f, short op)
 		break;
 	case OP_UNLINK:
 		if(owner)
-		if((perms&U_READ) && (perms&U_WRITE))
-			return 0;
+			if((perms&U_READ) && (perms&U_WRITE))
+				return 0;
 		if((perms&W_READ) && (perms&W_WRITE))
 			return 0;
 	}
@@ -236,7 +237,7 @@ filewrite(struct file *f, char *addr, int n)
 {
 	int r;
 
-	if(f->writable == 0){
+	if(!f->writable){
 		seterr(EIUNWRITE);
 		return -1;
 	}

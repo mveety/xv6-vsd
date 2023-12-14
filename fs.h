@@ -36,7 +36,8 @@ struct dinode {
 	short major;          // Major device number (T_DEV only)
 	short minor;          // Minor device number (T_DEV only)
 	short owner;		// owner of the inode	
-	short perms;		// owner permissions (read, write, exec, hidden)
+	uchar perms;		// owner permissions (read, write, exec, hidden)
+	uchar attrib;		// optional attributes
 	short nlink;          // Number of links to inode in file system
 	uint size;            // Size of file (bytes)
 	uint addrs[NDIRECT];   // Data block addresses
@@ -61,4 +62,3 @@ struct dirent {
 	ushort inum;
 	char name[DIRSIZ];
 };
-

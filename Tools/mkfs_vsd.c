@@ -22,24 +22,19 @@
 #define NINODES (FSSIZE/10)
 
 // user permissions
-#define U_READ 0x0001
-#define U_WRITE 0x0002
-#define U_EXEC 0x0004
-#define U_HIDDEN 0x0008
+#define U_READ (1<<0)
+#define U_WRITE (1<<1)
+#define U_EXEC (1<<2)
+#define U_HIDDEN (1<<3)
 // world permissions
-#define W_READ 0x0100
-#define W_WRITE 0x0200
-#define W_EXEC 0x0400
-#define W_HIDDEN 0x0800
+#define W_READ (1<<4)
+#define W_WRITE (1<<5)
+#define W_EXEC (1<<6)
+#define W_HIDDEN (1<<7)
 
 #define sysperms U_READ|W_READ
 #define binperms U_READ|U_EXEC|W_READ|W_EXEC
 #define etcperms U_READ|U_WRITE|W_READ
-
-#define P_READ 0x1000
-#define P_WRITE 0x0100
-#define P_EXEC 0x0010
-#define P_HIDDEN 0x0001
 
 // Disk layout:
 // [ boot block | sb block | log | inode blocks | free bit map | data blocks ]
@@ -64,7 +59,7 @@ void rsect(uint sec, void *buf);
 uint ialloc(ushort type);
 uint iallocp(ushort type, ushort perms);
 void iappend(uint inum, void *p, int n);
-void iappendm(uint inum, void *p, int n, int mode);
+void iappendm(uint inum, void *p, int n, uchar mode);
 uint makedir(uint parent, char *name);
 
 typedef struct {
@@ -358,7 +353,7 @@ iallocp(ushort type, ushort perms)
 	din.nlink = xshort(1);
 	din.size = xint(0);
 	din.owner = xshort(-1);
-	din.perms = xshort(perms);
+	din.perms = perms;
 	winode(inum, &din);
 	return inum;
 }
@@ -393,7 +388,7 @@ iappend(uint inum, void *xp, int n)
 }
 
 void
-iappendm(uint inum, void *xp, int n, int mode)
+iappendm(uint inum, void *xp, int n, uchar mode)
 {
 	char *p = (char*)xp;
 	struct dinode din;
