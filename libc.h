@@ -187,6 +187,9 @@ int spawn(void (*entry)(void*), void*);
 int pspawn(void (*entry)(void*), void*);
 
 // sprintf.c
+char *swriteint(int, int, int);
+char *extendstring(char*, int);
+char *oputc(char, char*, int, uint*);
 char *sprintf(char*, ...);
 
 // message.c
