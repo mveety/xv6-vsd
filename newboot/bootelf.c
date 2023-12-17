@@ -6,9 +6,11 @@
 #include "memlayout.h"
 #include "kbd.h"
 #include "fs.h"
-#include "newboot/smalloc.h"
 
 int cur_line, cur_col, stiter;
+char *heap;
+uint hoffset;
+uint heaplen;
 extern void elfmain(void);
 void putch(char);
 void readsect(void*, uint);
@@ -16,6 +18,8 @@ void readfile(uint*, uchar*, uint, uint);
 void panic(void);
 void printst(void);
 void memcpy(void*, void*, uint);
+void smalloc_init(void*, uint);
+void *smalloc(uint);
 
 void
 bootmain(void)
@@ -34,12 +38,17 @@ bootmain(void)
 	uint ksize;
 	uint kblks;
 	char *xptr;
+	// for the kernel
+	// u32int *memmap_len;
+	// struct usable_mem *memmap;
 
 // stage 0: initial set up
+	// memmap_len = (void*)0x500;
+	// memmap = (void*)0x600;
 	cur_col = 0;
 	cur_line = 0;
 	stiter = 0;
-	smalloc_init((void*)0x800000, 0x100000);
+	smalloc_init((void*)0x700, 0x7e00);
 	for(i = 0; i < (80*25); i++)
 		putch(' ');
 	cur_line = 0;
@@ -72,7 +81,7 @@ bootmain(void)
 	kblks = ksize/BSIZE;
 	if(ksize%BSIZE)
 		kblks += 1;
-	addrs = smalloc(BSIZE*kblks);
+	addrs = smalloc(kblks*sizeof(u32int));
 	xptr = (void*)addrs;
 	for(i = 0; kinode->addrs[i] != 0; i++){
 		printst();
@@ -262,4 +271,37 @@ memcpy(void *dst, void *src, uint len)
 	sptr = src;
 	for(i = 0; i < len; i++)
 		dptr[i] = sptr[i];
+}
+
+void
+smalloc_panic(void)
+{
+	putch('m');
+	putch('!');
+	for(;;)
+		hlt();
+}
+
+void
+smalloc_init(void *h, uint len)
+{
+	int i = 0;
+
+	hoffset = 0;
+	heaplen = len;
+	heap = h;
+	for(i = 0; i < heaplen; i++)
+		heap[i] = (char)0;
+}
+
+void*
+smalloc(uint sz)
+{
+	void *nptr;
+
+	if(hoffset+sz >= heaplen)
+		smalloc_panic();
+	nptr = &heap[hoffset];
+	hoffset += sz;
+	return nptr;
 }

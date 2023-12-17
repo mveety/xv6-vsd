@@ -85,8 +85,7 @@ vsdmbr: newboot/mbrasm.S newboot/mbrmain.c
 bootelf: newboot/bootelf.c newboot/bootentry.S newboot/smalloc.c
 	$(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c newboot/bootentry.S
 	$(CC) $(CFLAGS) -fno-pic -O -nostdinc -I. -c newboot/bootelf.c
-	$(CC) $(CFLAGS) -fno-pic -O -nostdinc -I. -c newboot/smalloc.c
-	$(LD) $(LDFLAGS) -N -e bootelf_entry -Ttext 0x9000 -o bootelf.o_ bootentry.o bootelf.o smalloc.o
+	$(LD) $(LDFLAGS) -N -e bootelf_entry -Ttext 0x9000 -o bootelf.o_ bootentry.o bootelf.o
 	$(OBJDUMP) -S bootelf.o_ > bootelf.asm
 	$(OBJCOPY) -S -O binary -j .text bootelf.o_ bootelf
 

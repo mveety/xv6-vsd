@@ -187,3 +187,8 @@ struct trapframe {
 	ushort ss;
 	ushort padding6;
 };
+
+struct usable_mem {
+	u32int start;
+	u32int length;
+};
