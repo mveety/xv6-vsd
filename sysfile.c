@@ -553,7 +553,7 @@ sys_chperms(void)
 		iunlockput(ip);
 		break;
 	case 1:
-		if(ip->owner != proc->uid && singleuser == 0){
+		if(ip->owner != proc->uid && singleuser == 0 && proc->uid != -1){
 			seterr(ESNOPERMS);
 			iunlockput(ip);
 			end_op();

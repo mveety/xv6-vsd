@@ -223,6 +223,7 @@ do_update(void*)
 void
 daemon(void*)
 {
+	receive(nil);
 	for(;;){
 		do_update(nil);
 		if(parent > 0){
@@ -277,6 +278,7 @@ main(int argc, char *argv[])
 	parent = getpid();
 	pid = pspawn(&daemon, nil);
 	printf(1, "devd: made background process (pid = %d)\n", pid);
+	send(pid, 0, nil, 0);
 	receive(nil);
 	return 0;
 }

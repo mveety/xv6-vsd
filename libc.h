@@ -3,6 +3,8 @@
 
 // error messages
 #include "errstr.h"
+// message sentinels
+#include "msgtype.h"
 
 // userspace only error messages
 #define EULOCKHELD "proc already holds lock"
@@ -191,6 +193,11 @@ char *swriteint(int, int, int);
 char *extendstring(char*, int);
 char *oputc(char, char*, int, uint*);
 char *sprintf(char*, ...);
+
+// formatting.c
+char *fmtnamen(char*, char*, int);
+char *fmtpermsn(int, char*, int);
+char *fmtfieldn(char*, int, char, char*, int);
 
 // message.c
 

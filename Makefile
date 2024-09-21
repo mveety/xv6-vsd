@@ -149,7 +149,7 @@ bochs: sysall
 	bochs -q -f xv6-vsd.cfg
 
 ULIB = ulib.o usys.o printf.o umalloc.o user_string.o ulocks.o uthread.o \
-	sprintf.o message.o args.o
+	sprintf.o message.o args.o formatting.o
 
 libc.a: $(ULIB)
 	ar -rc libc.a $(ULIB)

@@ -4,96 +4,24 @@ char*
 fmtname(char *path)
 {
 	static char buf[DIRSIZ+1];
-	char *p;
-	
-	// Find first character after last slash.
-	for(p=path+strlen(path); p >= path && *p != '/'; p--)
-		;
-	p++;
-	
-	// Return blank-padded name.
-	if(strlen(p) >= DIRSIZ)
-		return p;
-	memmove(buf, p, strlen(p));
-	memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
-	return buf;
+
+	return fmtnamen(path, buf, sizeof(buf));
 }
 
 char*
 fmtperms(int perms, char *buf)
 {
-//	"U:rwxh,W:rwxh"
-	int i = 0;
-
-	memset(buf, 0, 16);
-	buf[i++] = 'U';
-	buf[i++] = ':';
-
-	if((perms&U_READ) == U_READ)
-		buf[i++] = 'r';
-	else
-		buf[i++] = '-';
-	if((perms&U_WRITE) == U_WRITE)
-		buf[i++] = 'w';
-	else
-		buf[i++] = '-';
-	if((perms&U_EXEC) == U_EXEC)
-		buf[i++] = 'x';
-	else
-		buf[i++] = '-';
-	if((perms&U_HIDDEN) == U_HIDDEN)
-		buf[i++] = 'h';
-	else
-		buf[i++] = '-';
-
-	buf[i++] = ',';
-	buf[i++] = 'W';
-	buf[i++] = ':';
-
-	if((perms&W_READ) == W_READ)
-		buf[i++] = 'r';
-	else
-		buf[i++] = '-';
-	if((perms&W_WRITE) == W_WRITE)
-		buf[i++] = 'w';
-	else
-		buf[i++] = '-';
-	if((perms&W_EXEC) == W_EXEC)
-		buf[i++] = 'x';
-	else
-		buf[i++] = '-';
-	if((perms&W_HIDDEN) == W_HIDDEN)
-		buf[i++] = 'h';
-	else
-		buf[i++] = '-';
-
-	return buf;
+	return fmtpermsn(perms, buf, 16);
 }
 
 char*
 fmtfield(char *data, int fieldsize, char filler)
 {
-	int datasize, wrapper;
-	int i, j;
 	char buf[64];
+	char *field;
 
-	datasize = strlen(data);
-
-	if(datasize > fieldsize)
-		return strdup(data);
-
-	wrapper = fieldsize - datasize;
-	memset(buf, 0, 64);
-	for(i = 0; i < (wrapper/2); i++)
-		buf[i] = filler;
-
-	for(j = 0; i < 64 && j < datasize; i++, j++)
-		buf[i] = data[j];
-
-	for(; i < fieldsize; i++)
-		buf[i] = filler;
-
-	return strdup(buf);
+	field = fmtfieldn(data, fieldsize, filler, buf, sizeof(buf));
+	return strdup(field);
 }
 
 static char *types[] = {
