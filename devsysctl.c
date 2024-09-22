@@ -74,7 +74,7 @@ char *scmsg[] = {
 int
 sysctl_read(struct inode* ip, char* bf, int nbytes, int off)
 {
-	int scmsz = scmsgsz*5;
+	int scmsz = scmsgsz*6;
 	char buf[scmsz+5];
 	int rnbytes;
 
@@ -86,10 +86,11 @@ sysctl_read(struct inode* ip, char* bf, int nbytes, int off)
 		rnbytes = nbytes;
 	memset(buf, 0, sizeof(buf));
 	memmove(&buf[0], sysuart ? scmsg[0] : scmsg[1], scmsgsz);
-	memmove(&buf[15], singleuser ? scmsg[2] : scmsg[3], scmsgsz);
-	memmove(&buf[30], allowthreads ? scmsg[4] : scmsg[5], scmsgsz);
-	memmove(&buf[45], useclone ? scmsg[6] : scmsg[7], scmsgsz);
-	memmove(&buf[60], msgnote ? scmsg[8] : scmsg[9], scmsgsz);
+	memmove(&buf[15], syscons ? scmsg[10] : scmsg[11], scmsgsz);
+	memmove(&buf[30], singleuser ? scmsg[2] : scmsg[3], scmsgsz);
+	memmove(&buf[45], allowthreads ? scmsg[4] : scmsg[5], scmsgsz);
+	memmove(&buf[60], useclone ? scmsg[6] : scmsg[7], scmsgsz);
+	memmove(&buf[75], msgnote ? scmsg[8] : scmsg[9], scmsgsz);
 	memmove(bf, &buf[0], rnbytes);
 	return rnbytes;
 }

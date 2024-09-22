@@ -1,9 +1,9 @@
 # this is read by devd on start up to populate /dev
 # filename major minor
-# console is handled by init currently.
+# syscons is handled by init currently.
 # auth doesn't exist yet
 # auth 3 1
-console 1 1
+console 1 2
 null 2 0
 zero 2 1
 robpike 2 2

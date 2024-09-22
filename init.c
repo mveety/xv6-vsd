@@ -17,14 +17,14 @@ main(void)
 
 	uid = getuid();
 	sid = getsid();
-	if(open("/dev/bootcons", O_RDWR) < 0){
+	if(open("/dev/syscons", O_RDWR) < 0){
 		if(mkdir("/dev") == 0){
-			mknod("/dev/bootcons", 1, 1);
-			open("/dev/bootcons", O_RDWR);
+			mknod("/dev/syscons", 1, 1);
+			open("/dev/syscons", O_RDWR);
 		} else if((cfd = open("/dev", O_RDONLY)) >= 0){
 			close(cfd);
-			mknod("/dev/bootcons", 1, 1);
-			open("/dev/bootcons", O_RDWR);
+			mknod("/dev/syscons", 1, 1);
+			open("/dev/syscons", O_RDWR);
 		} else {
 				printf(1, "init: error: could not create boot console\n");
 				for(;;);
@@ -40,8 +40,9 @@ main(void)
 		return -1;
 	}
 	runrc();
-	pid = runlogin();
-	while((wpid=wait()) >= 0 && wpid != pid) ;
+	// pid = runlogin();
+	// while((wpid=wait()) >= 0 && wpid != pid) ;
+	while(wait() >= 0) ;
 	return 0;
 }
 

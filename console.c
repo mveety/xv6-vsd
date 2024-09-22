@@ -303,8 +303,12 @@ consolewrite(struct inode *ip, char *buf, int n, int off)
 
 	iunlock(ip);
 	acquire(&cons.lock);
-	for(i = 0; i < n; i++)
-		cgaputc(buf[i] & 0xff);
+	for(i = 0; i < n; i++){
+		if(ip->minor == 1)
+			consputc(buf[i] & 0xff);
+		else if(ip->minor == 2)
+			cgaputc(buf[i] & 0xff);
+	}
 	release(&cons.lock);
 	ilock(ip);
 
