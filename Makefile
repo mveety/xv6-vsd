@@ -216,6 +216,7 @@ UPROGS=\
 	_malloctest\
 	_clonemalloc\
 	_argstest\
+	_chperms\
 
 fs.img: mkfs_vsd $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
 	./mkfs_vsd fs.img VSDSYS $(UPROGS) kernel.elf kernel.bin bootelf bootbin @passwd @devices @rc @motd
