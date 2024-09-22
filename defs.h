@@ -23,6 +23,7 @@ struct inputbuf {
 
 extern int halted;
 extern int sysuart;
+extern int syscons;
 
 // bio.c
 void            binit(void);

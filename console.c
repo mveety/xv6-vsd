@@ -17,6 +17,7 @@
 static void consputc(int);
 struct inputbuf input;
 static int panicked = 0;
+int syscons = 1;
 
 static struct {
 	struct spinlock lock;
@@ -203,7 +204,8 @@ consputc(int c)
 		} else
 			uartputc(c);
 	}
-	cgaputc(c);
+	if(syscons)
+		cgaputc(c);
 }
 
 #define C(x)  ((x)-'@')  // Control-x
@@ -302,7 +304,7 @@ consolewrite(struct inode *ip, char *buf, int n, int off)
 	iunlock(ip);
 	acquire(&cons.lock);
 	for(i = 0; i < n; i++)
-		consputc(buf[i] & 0xff);
+		cgaputc(buf[i] & 0xff);
 	release(&cons.lock);
 	ilock(ip);
 

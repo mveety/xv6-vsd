@@ -24,6 +24,7 @@ main(void)
 
 	singleuser = 1; // boot into single user mode initally
 	booted = 0;
+	syscons = 1; // cga/ega/vga is the system console
 	cgamove(1, 0);
 	cgaprintstr("xv6...\n");
 	consoleinit1();   // I/O devices

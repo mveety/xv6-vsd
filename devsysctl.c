@@ -57,16 +57,18 @@ sysname_init(void)
 
 #define scmsgsz 15
 char *scmsg[] = {
-	[0] "sysuart 1     \n",
-	[1] "sysuart 0     \n",
-	[2] "singleuser 1  \n",
-	[3] "singleuser 0  \n",
-	[4] "allowthreads 1\n",
-	[5] "allowthreads 0\n",
-	[6] "useclone 1    \n",
-	[7] "useclone 0    \n",
-	[8] "msgnote 1     \n",
-	[9] "msgnote 0     \n",
+	[0]  "sysuart 1     \n",
+	[1]  "sysuart 0     \n",
+	[2]  "singleuser 1  \n",
+	[3]  "singleuser 0  \n",
+	[4]  "allowthreads 1\n",
+	[5]  "allowthreads 0\n",
+	[6]  "useclone 1    \n",
+	[7]  "useclone 0    \n",
+	[8]  "msgnote 1     \n",
+	[9]  "msgnote 0     \n",
+	[10] "syscons 1     \n",
+	[11] "syscons 0     \n",
 };
 
 int
@@ -137,6 +139,20 @@ sysctl_write(struct inode *ip, char *bf, int nbytes, int off)
 				cprintf("cpu%d: sysuart = no\n", cpu->id);
 			}
 			break;
+		} else if(strcmp(buf, "syscons") == 0){
+			rbf = getnextfield(buf, rbf, &i, &st);
+			if(st){
+				cprintf("cpu%d: syscons = yes\n", cpu->id);
+				syscons = 1;
+			}
+			if(strcmp(buf, "yes") == 0){
+				syscons = 1;
+				cprintf("cpu%d: syscons = yes\n", cpu->id);
+			} else if(strcmp(buf, "no") == 0){
+				syscons = 0;
+				cprintf("cpu%d: syscons = no\n", cpu->id);
+			}
+			break;
 		} else if(strcmp(buf, "singleuser") == 0){
 			rbf = getnextfield(buf, rbf, &i, &st);
 			if(st)
@@ -191,7 +207,7 @@ sysctl_write(struct inode *ip, char *bf, int nbytes, int off)
 				cprintf("cpu%d: msgnote = yes\n", cpu->id);
 			} else if(strcmp(buf, "no") == 0){
 				msgnote = 0;
-				cprintf("cpu%d: msgnode = no\n", cpu->id);
+				cprintf("cpu%d: msgnote = no\n", cpu->id);
 			}
 			break;
 		} else {
@@ -254,6 +270,7 @@ reboot(void)
 {
 	cli();
 	sysuart = 1;
+	syscons = 1;
 	cprintf("cpu%d: rebooting...\n", cpu->id);
 	u8int good = 0x02;
 	while(good & 0x02)
@@ -281,6 +298,7 @@ shutdown(int op)
 	rsbuf = (rsbuf - ((rsbuf/60)*60));
 	uptime_seconds = rsbuf;
 	sysuart = 1;
+	syscons = 1;
 	if(op == 0){
 		cli();
 		cprintf("cpu%d: system online for %uh %um %us\n", cpu->id,

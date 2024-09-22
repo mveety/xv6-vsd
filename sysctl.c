@@ -4,6 +4,7 @@ int sysctlfd;
 
 void usage(void);
 void sysuart(int);
+void syscons(int);
 void singleuser(int);
 void allowthreads(int);
 void useclone(int);
@@ -30,6 +31,13 @@ main(int argc, char *argv[])
 			exit();
 		}
 		sysuart(atoi(argv[2]));
+	} else if(strcmp(argv[1], "syscons") == 0){
+		if(argc < 3){
+			printf(2, "usage: sysctl syscons [0|1]\n");
+			exit();
+		}
+		syscons(atoi(argv[2]));
+
 	} else if(strcmp(argv[1], "singleuser") == 0){
 		if(argc < 3){
 			printf(2, "usage: sysctl singleuser [0|1]\n");
@@ -65,6 +73,17 @@ sysuart(int st)
 {
 	char *enable = "sysuart yes  \0";
 	char *disable = "sysuart no  \0";
+	if(st)
+		write(sysctlfd, enable, strlen(enable));
+	else
+		write(sysctlfd, disable, strlen(disable));
+}
+
+void
+syscons(int st)
+{
+	char *enable = "syscons yes  \0";
+	char *disable = "syscons no  \0";
 	if(st)
 		write(sysctlfd, enable, strlen(enable));
 	else
