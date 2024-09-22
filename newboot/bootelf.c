@@ -7,11 +7,14 @@
 #include "kbd.h"
 #include "fs.h"
 
+#define COM1 0x3f8
+
 int cur_line, cur_col, stiter;
 char *heap;
 uint hoffset;
 uint heaplen;
 extern void elfmain(void);
+void vgaputch(char);
 void putch(char);
 void readsect(void*, uint);
 void readfile(uint*, uchar*, uint, uint);
@@ -20,6 +23,8 @@ void printst(void);
 void memcpy(void*, void*, uint);
 void smalloc_init(void*, uint);
 void *smalloc(uint);
+void uartinit(void);
+void uartputch(char c);
 
 void
 bootmain(void)
@@ -45,12 +50,13 @@ bootmain(void)
 // stage 0: initial set up
 	// memmap_len = (void*)0x500;
 	// memmap = (void*)0x600;
+	uartinit();
 	cur_col = 0;
 	cur_line = 0;
 	stiter = 0;
 	smalloc_init((void*)0x700, 0x7e00);
 	for(i = 0; i < (80*25); i++)
-		putch(' ');
+		vgaputch(' ');
 	cur_line = 0;
 	cur_col = 0;
 	putch(' ');putch(' ');
@@ -136,7 +142,7 @@ bootmain(void)
 }
 
 void
-putch(char c)
+vgaputch(char c)
 {
 	int linpos;
 	int print = 1;
@@ -180,6 +186,13 @@ putch(char c)
 		*cur = pdat;
 		cur_col++;
 	}
+}
+
+void
+putch(char c)
+{
+	vgaputch(c);
+	uartputch(c);
 }
 
 void
@@ -244,16 +257,16 @@ printst(void)
 	cur_line = 0;
 	switch(stiter){
 	case 0:
-		putch('|');
+		vgaputch('|');
 		break;
 	case 1:
-		putch('/');
+		vgaputch('/');
 		break;
 	case 2:
-		putch('-');
+		vgaputch('-');
 		break;
 	case 3:
-		putch('\\');
+		vgaputch('\\');
 		break;
 	}
 	stiter++;
@@ -304,4 +317,37 @@ smalloc(uint sz)
 	nptr = &heap[hoffset];
 	hoffset += sz;
 	return nptr;
+}
+
+void
+uartinit(void)
+{
+	// nicked from uart.c
+	// Turn off the FIFO
+	outb(COM1+2, 0);
+	// 9600 baud, 8 data bits, 1 stop bit, parity off.
+	outb(COM1+3, 0x80);    // Unlock divisor
+	outb(COM1+0, 115200/9600);
+	outb(COM1+1, 0);
+	outb(COM1+3, 0x03);    // Lock divisor, 8 data bits.
+	outb(COM1+4, 0);
+}
+
+void
+microdelay(int delay)
+{
+	for(int i = 0; i < delay; i++)
+		;
+}
+
+void
+uartputch(char c)
+{
+	int i;
+
+	for(i = 0; i < 128 && !(inb(COM1+5) & 0x20); i++)
+		microdelay(10);
+	if(c == '\b')
+		c = 'H' - '@';
+	outb(COM1+0, c);
 }

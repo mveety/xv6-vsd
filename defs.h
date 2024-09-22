@@ -208,6 +208,8 @@ void            tvinit(void);
 extern struct spinlock tickslock;
 
 // uart.c
+void		earlyuartputc(char);
+void		earlyuartprintstr(char*);
 void            uartinit(void);
 void            uartintr(void);
 void            uartputc(int);

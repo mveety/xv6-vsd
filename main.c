@@ -25,8 +25,10 @@ main(void)
 	singleuser = 1; // boot into single user mode initally
 	booted = 0;
 	syscons = 1; // cga/ega/vga is the system console
+	sysuart = 1; // make the uart initally print messages
 	cgamove(1, 0);
 	cgaprintstr("xv6...\n");
+	earlyuartprintstr("\nxv6...\n");
 	consoleinit1();   // I/O devices
 	kinit1(end, P2V(4*1024*1024)); // phys page allocator
 	kvmalloc();      // kernel page table
@@ -41,7 +43,6 @@ main(void)
 	ioapicinit();    // another interrupt controller
 	consoleinit2();   // I/O device's interrupts
 	uartinit();      // serial port
-	sysuart = 1;    // make the uart initally print messages
 	pinit();         // process table
 	tvinit();        // trap vectors
 	if(!ismp){
@@ -77,7 +78,7 @@ mpenter(void)
 static void
 mpmain(void)
 {
-	cprintf("cpu%d: starting\n", cpu->id);
+	cprintf("cpu%d: starting timesharing\n", cpu->id);
 	idtinit();       // load idt register
 	xchg(&cpu->started, 1); // tell startothers() we're up
 	scheduler();     // start running processes

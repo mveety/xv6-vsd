@@ -16,7 +16,7 @@
 #define COM1    0x3f8
 
 int sysuart;
-static int uart;    // is there a uart?
+int uart = 0;    // is there a uart?
 struct spinlock uartlock;
 struct inputbuf uartin;
 
@@ -38,10 +38,36 @@ nouart_write(struct inode *ip, char *c, int nbytes, int off)
 }
 
 void
+earlyuartputc(char c)
+{
+	// here we're going to assume the uart is initialized and working
+	// from the bootloader. this ends up being basically the bootloader's
+	// uartputch
+	int i, j;
+
+	for(i = 0; i < 128 && !(inb(COM1+5) & 0x20); i++)
+		for(j = 0; j < 20; j++)
+			;
+	if(c == '\b')
+		c = 'H' - '@';
+	outb(COM1+0, c);
+}
+
+void
+earlyuartprintstr(char *str)
+{
+	char *p;
+
+	for(p = str; *p ; p++)
+		earlyuartputc(*p);
+}
+
+void
 uartinit(void)
 {
 	char *p;
 
+	cprintf("cpu%d: driver: starting uart\n", cpu->id);
 	// Turn off the FIFO
 	outb(COM1+2, 0);
 	// 9600 baud, 8 data bits, 1 stop bit, parity off.
@@ -71,8 +97,8 @@ uartinit(void)
 	ioapicenable(IRQ_COM1, 0);
 	
 	// Announce that we're here.
-	for(p="xv6...\n"; *p; p++)
-		uartputc(*p);
+//	for(p="\nxv6...\n"; *p; p++)
+//		uartputc(*p);
 }
 
 #define BACKSPACE 0x100

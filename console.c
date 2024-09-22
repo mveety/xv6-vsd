@@ -18,6 +18,7 @@ static void consputc(int);
 struct inputbuf input;
 static int panicked = 0;
 int syscons = 1;
+extern int uart;
 
 static struct {
 	struct spinlock lock;
@@ -191,6 +192,15 @@ cgaprintstr(char *c)
 }
 
 void
+_uartputc(int c)
+{
+	if(uart)
+		uartputc(c);
+	else
+		earlyuartputc((char)c);
+}
+
+void
 consputc(int c)
 {
 	if(panicked){
@@ -200,9 +210,9 @@ consputc(int c)
 	}
 	if(sysuart){
 		if(c == BACKSPACE){
-			uartputc('\b'); uartputc(' '); uartputc('\b');
+			_uartputc('\b'); _uartputc(' '); _uartputc('\b');
 		} else
-			uartputc(c);
+			_uartputc(c);
 	}
 	if(syscons)
 		cgaputc(c);
