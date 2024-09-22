@@ -553,7 +553,7 @@ sys_chperms(void)
 		iunlockput(ip);
 		break;
 	case 1:
-		if(ip->owner != proc->uid && singleuser == 0 && proc->uid != -1){
+		if(ip->owner != proc->uid && !singleuser && proc->uid != -1){
 			seterr(ESNOPERMS);
 			iunlockput(ip);
 			end_op();
@@ -561,6 +561,7 @@ sys_chperms(void)
 		}
 		ip->perms = (short)perms;
 		rval = 0;
+		iupdate(ip);
 		iunlockput(ip);
 		break;
 	default:
@@ -571,5 +572,11 @@ sys_chperms(void)
 	}
 	end_op();
 	return rval;
+}
+
+int // do nothing for now
+sys_fssync(void)
+{
+	return 0;
 }
 

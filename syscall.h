@@ -35,3 +35,5 @@
 #define SYS_sendmsg  34
 #define SYS_recvmsg  35
 #define SYS_recvwait 36
+#define SYS_fssync	 37
+

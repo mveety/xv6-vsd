@@ -113,6 +113,7 @@ extern int sys_clone(void);
 extern int sys_sendmsg(void);
 extern int sys_recvwait(void);
 extern int sys_recvmsg(void);
+extern int sys_fssync(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    	sys_fork, // creates a new process
@@ -151,6 +152,7 @@ static int (*syscalls[])(void) = {
 [SYS_sendmsg]   sys_sendmsg, // send a message to another process
 [SYS_recvmsg]   sys_recvmsg, // get a message out of your mailbox, if none sleep
 [SYS_recvwait]  sys_recvwait, // sleep until you get a message, return the size
+[SYS_fssync]	sys_fssync, // write all disk changes to the disk
 };
 
 void

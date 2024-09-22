@@ -235,7 +235,7 @@ ialloc(uint dev, short type)
 
 // Copy a modified in-memory inode to disk.
 void
-iupdate(struct inode *ip)
+iupdate1(struct inode *ip, int direct)
 {
 	struct buf *bp;
 	struct dinode *dip;
@@ -250,8 +250,23 @@ iupdate(struct inode *ip)
 	dip->perms = ip->perms;
 	dip->size = ip->size;
 	memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
-	log_write(bp);
+	if(direct)
+		bwrite(bp);
+	else
+		log_write(bp);
 	brelse(bp);
+}
+
+void
+iupdate(struct inode *ip)
+{
+	iupdate1(ip, 0);
+}
+
+void
+iupdate_direct(struct inode *ip)
+{
+	iupdate1(ip, 1);
 }
 
 // Find the inode with number inum on device dev
@@ -363,7 +378,7 @@ iunlock(struct inode *ip)
 // All calls to iput() must be inside a transaction in
 // case it has to free the inode.
 void
-iput(struct inode *ip)
+iput1(struct inode *ip, int direct)
 {
 	acquire(&icache.lock);
 	if(ip->ref == 1 && (ip->flags & I_VALID) && ip->nlink == 0){
@@ -374,7 +389,7 @@ iput(struct inode *ip)
 		release(&icache.lock);
 		itrunc(ip);
 		ip->type = 0;
-		iupdate(ip);
+		iupdate1(ip, direct);
 		acquire(&icache.lock);
 		ip->flags = 0;
 		wakeup(ip);
@@ -383,12 +398,31 @@ iput(struct inode *ip)
 	release(&icache.lock);
 }
 
+void
+iput(struct inode *ip)
+{
+	iput1(ip, 0);
+}
+
+void
+iput_direct(struct inode *ip)
+{
+	iput1(ip, 1);
+}
+
 // Common idiom: unlock, then put.
 void
 iunlockput(struct inode *ip)
 {
 	iunlock(ip);
 	iput(ip);
+}
+
+void
+iunlockput_direct(struct inode *ip)
+{
+	iunlock(ip);
+	iput_direct(ip);
 }
 
 // Return the disk block address of the nth block in inode ip.
