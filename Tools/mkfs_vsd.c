@@ -104,11 +104,11 @@ int
 main(int argc, char *argv[])
 {
 	int i, cc, fd, m;
-	uint rootino, binino, etcino, inum, off;
+	uint rootino, binino, etcino, inum;//, off;
 	uint bootino;
 	struct dirent de;
 	char buf[BSIZE];
-	struct dinode din;
+//	struct dinode din;
 
 	static_assert(sizeof(int) == 4, "Integers must be 4 bytes!");
 	if(argc < 2){
@@ -254,6 +254,7 @@ main(int argc, char *argv[])
 		memmove(buf, &sb, sizeof(sb));
 		wsect(1, buf);
 	}
+/*
 	// fix size of root inode dir
 	rinode(rootino, &din);
 	off = xint(din.size);
@@ -279,6 +280,7 @@ main(int argc, char *argv[])
 	off = ((off/BSIZE) + 1) * BSIZE;
 	din.size = xint(off);
 	winode(bootino, &din);
+*/
 	balloc(freeblock);
 	exit(0);
 }

@@ -13,7 +13,7 @@ parseperms(char *strperms, int world)
 	strpermslen = strlen(strperms);
 
 	if(strperms[i] == 'r' && i < strpermslen){
-perms |= world ? W_READ : U_READ;
+		perms |= world ? W_READ : U_READ;
 		i++;
 	}
 	if(strperms[i] == 'w' && i < strpermslen){
