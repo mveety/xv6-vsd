@@ -10,6 +10,7 @@ _*
 .*.*.swp
 .*.swp
 *.patch
+*.core
 TAGS
 bootblock
 entryother
@@ -21,6 +22,7 @@ kernel
 kernelmemfs
 mkfs
 mkfs_vsd
+mkproto
 .gdbinit
 bochsout.txt
 bootelf

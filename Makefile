@@ -171,6 +171,10 @@ mkfs:
 mkfs_vsd:
 	$(MKFSCC) -Werror -Wall -o mkfs_vsd Tools/mkfs_vsd.c
 
+mkproto: Tools/mkproto.c
+	$(MKFSCC) -O0 -g -Werror -Wall -o mkproto Tools/mkproto.c
+
+
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
 # details:
@@ -229,11 +233,12 @@ fs.qcow: fs.img
 
 clean: 
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
-	*.o *.d *.asm *.sym *.dsyms bootblock entryother mkfs_vsd \
+	*.o *.d *.asm *.sym *.dsyms bootblock entryother \
 	initcode initcode.out kernel.bin kernel.elf xv6.img \
 	fs.img kernelmemfs mkfs .gdbinit libc.a vsdmbr bootelf \
-	*.o_ bootbin initkern initkern.out fs.qcow $(UPROGS)
+	*.o_ bootbin initkern initkern.out fs.qcow $(UPROGS) \
+	mkfs_vsd mkproto
 
 fsclean:
-	rm -f mkfs_vsd mkfs fs.img
+	rm -f mkfs_vsd mkproto mkfs fs.img
 
