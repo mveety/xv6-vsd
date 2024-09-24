@@ -10,6 +10,7 @@ file etc rc @rc -1 u:rw w:r
 file etc devices @devices -1 u:rw w:r
 file etc passwd @passwd -1 u:rw w:r
 file etc motd @motd -1 u:rw w:r
+
 file boot kernel.elf kernel.elf -1 u:rw w:r
 file boot kernel.bin kernel.bin -1 u:rw w:r
 file boot bootelf bootelf -1 u:rw w:r
@@ -58,3 +59,5 @@ file test  argstest   _argstest -1 u:rx w:rx
 
 kernel kernel.elf
 boot bootelf
+
+sync

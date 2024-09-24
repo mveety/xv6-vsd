@@ -37,6 +37,7 @@ enum {
 	EFILE = 3,
 	KERNEL = 4,
 	BOOTLOADER = 5,
+	SYNC = 6,
 	U_READ  =  (1<<0),
 	U_WRITE  =  (1<<1),
 	U_EXEC  =  (1<<2),
@@ -107,6 +108,11 @@ int neuter;
 char zeroes[BSIZE];
 Fs *active;
 Entry *entries;
+int fsbootable;
+int bootino;
+int kernbrand;
+int kernino;
+uint blocks_used;
 
 void*
 emallocz(size_t size)
@@ -433,7 +439,7 @@ iappend(Fs *fs, uint ino, void *data, uint sz)
 		}
 		raddr = xint(indirect[bptr.ptr]);
 
-		if(verbose)
+		if(debug)
 			dprintf(2, "mkproto: writing at block %u+%u (real %u) %u bytes\n",
 					fbn, sboff, raddr, wrlen);
 
@@ -467,6 +473,21 @@ syncfs(Fs *fs)
 	memset(buf, 0, sizeof(buf));
 	memmove(buf, &(fs->sb), sizeof(struct superblock));
 	wsect(fs, buf, 1);
+}
+
+void
+closefs(Fs *fs)
+{
+	uint i;
+	char *bmap = fs->bmap;
+
+	blocks_used = 1;
+	for(i = 1; i < fs->size; i++){
+		if((bmap[i/8] & (1<<(i%8))))
+			blocks_used++;
+	}
+	close(fs->fd);
+	fs->fd = -1;
 }
 
 Fs*
@@ -525,10 +546,17 @@ makefs(char *file, char *label, uint size, uint logsize, uint ninodes)
 	newfs->sb.bootinode = 0;
 	newfs->bmap = emallocz(nbitmap*BSIZE);
 	newfs->freeinode = 1;
+	newfs->size = size;
+	newfs->label = newfs->sb.label;
 
 	// reserve used blocks
 	for(i = 0; i < nmeta; i++)
 		newfs->bmap[i/8] |= 1 << (i %8);
+
+	dprintf(2, "mkproto: vsd new filesystem\n");
+	dprintf(2, "mkproto: label %s, version %d\n", newfs->sb.label, newfs->sb.version);
+	dprintf(2, "mkproto: meta %d (boot, super, log %u, inode %u, bitmap %u) blocks %d total %d\n",
+				 nmeta, nlog, ninodeblocks, nbitmap, nblocks, newfs->size);
 
 	// ream the filesystem
 	dprintf(2, "mkproto: reaming %s", label);
@@ -558,6 +586,7 @@ makefs(char *file, char *label, uint size, uint logsize, uint ninodes)
 	strcpy(de.name, "..");
 	iappend(newfs, root->ino, &de, sizeof(de));
 	newfs->dirs = root;
+	dprintf(2, "done\n");
 
 	syncfs(newfs);
 
@@ -608,7 +637,7 @@ finddir(Fs *fs, char *name)
 {
 	Dir *dirs;
 
-	for(dirs = fs->dirs; !dirs; dirs = dirs->next)
+	for(dirs = fs->dirs; dirs != nil; dirs = dirs->next)
 		if(!strcmp(name, dirs->name))
 			return dirs;
 	return nil;
@@ -663,7 +692,7 @@ findfile(Fs *fs, char *name)
 {
 	File *files;
 
-	for(files = fs->files; !files; files = files->next)
+	for(files = fs->files; files != nil ; files = files->next)
 		if(!strcmp(name, files->name))
 			return files;
 	return nil;
@@ -676,6 +705,8 @@ kernelbrand(File *kernel)
 	
 	fs = kernel->home->fs;
 	fs->sb.kerninode = xshort(kernel->ino);
+	kernbrand = 1;
+	kernino = kernel->ino;
 }
 
 void
@@ -686,6 +717,8 @@ bootbrand(File *bootloader)
 	fs = bootloader->home->fs;
 	fs->sb.bootable = 1;
 	fs->sb.bootinode = xshort(bootloader->ino);
+	fsbootable = 1;
+	bootino = bootloader->ino;
 }
 
 Entry*
@@ -736,6 +769,8 @@ entrytype(Entry *e)
 		return "kernel";
 	case BOOTLOADER:
 		return "boot";
+	case SYNC:
+		return "sync";
 	}
 	return "unknown";
 }
@@ -763,6 +798,9 @@ printentrystring(Entry *e, int prefix)
 	case BOOTLOADER:
 		dprintf(2, "%s: %s %s\n", e->fs->label, entrytype(e), e->name);
 		break;
+	case SYNC:
+		dprintf(2, "%s: %s\n", e->fs->label, entrytype(e));
+		break;
 	default:
 		dprintf(2, "unknown type %d\n", e->type);
 	}
@@ -779,6 +817,8 @@ doentry(Entry *e)
 		printentrystring(e, 1);
 	if(!e->active)
 		return nil;
+	if(!neuter && e->type != FSYS)
+		dprintf(2,".");
 	switch(e->type){
 	case FSYS:
 		e->active = 0;
@@ -789,7 +829,7 @@ doentry(Entry *e)
 	case DIRECT:
 		searchdir = finddir(e->fs, e->home);
 		if(!searchdir){
-			dprintf(2, "mkproto: directory %s not defined!\n", e->home);
+			dprintf(2, "mkproto: directory \"%s\" not defined!\n", e->home);
 			exit(1);
 		}
 		makedir(e->name, searchdir, e->owner, e->perms);
@@ -817,6 +857,10 @@ doentry(Entry *e)
 			exit(1);
 		}
 		bootbrand(searchfile);
+		break;
+	case SYNC:
+		syncfs(e->fs);
+		closefs(e->fs);
 		break;
 	default:
 		dprintf(2, "mkproto: unknown entry type %d\n", e->type);
@@ -863,7 +907,7 @@ parseentrystring(char *line)
 	
 	Entry *ent;
 
-	freeme = linedup = strdup(line);
+	freeme = linedup = strtrim(line);
 	token = strsep_wrapper(&linedup, " \t");
 	if(token == nil){
 		free(freeme);
@@ -924,6 +968,9 @@ parseentrystring(char *line)
 			goto fail;
 		ent = makeentry(active, BOOTLOADER, name, "", "", 0, 0, 0);
 		addentry(ent);
+	} else if(!strcmp(token, "sync")) {
+		ent = makeentry(active, SYNC, "", "", "", 0, 0, 0);
+		addentry(ent);
 	} else {
 		dprintf(2, "mkproto: unknown entry type \"%s\"\n", token);
 	}
@@ -941,12 +988,31 @@ runentries(Entry *ents)
 {
 	Entry *e;
 
+	if(!neuter)
+		dprintf(2, "mkproto: adding files");
 	for(e = ents; e != nil; e = e->next){
 		if(neuter)
 			printentrystring(e, 1);
 		else
 			doentry(e);
 	}
+	if(!neuter){
+		dprintf(2, "done\n");
+		if(kernbrand)
+			dprintf(2, "mkproto: kernel is inode %u\n", kernino);
+		if(fsbootable)
+			dprintf(2, "mkproto: fs bootable. bootloader is inode %u\n", bootino);
+		dprintf(2, "mkproto: first %u blocks have been allocated\n", blocks_used);
+	}
+}
+
+void
+printentries(Entry *ents)
+{
+	Entry *e;
+
+	for(e = ents; e != nil; e = e->next)
+		printentrystring(e, 1);
 }
 
 void
@@ -970,6 +1036,8 @@ main(int argc, char *argv[])
 	neuter = 0;
 	cont = 0;
 	havefile = 0;
+	fsbootable = 0;
+	kernbrand = 0;
 
 	while((ch = getopt(argc, argv, "dvncf:")) != -1){
 		switch(ch){
