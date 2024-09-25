@@ -105,6 +105,7 @@ int verbose;
 int debug;
 int neuter;
 int use_altfsfile;
+int use_altsize;
 
 char zeroes[BSIZE];
 Fs *active;
@@ -115,6 +116,7 @@ int kernbrand;
 int kernino;
 uint blocks_used;
 char *altfsfile;
+char *altsize;
 
 void*
 emallocz(size_t size)
@@ -902,6 +904,7 @@ parseentrystring(char *line)
 	char *source;
 	char *s_owner;
 	int owner;
+	char *s_size0;
 	char *s_size;
 	uint size;
 	char *perms1;
@@ -927,7 +930,11 @@ parseentrystring(char *line)
 			source = altfsfile;
 		else
 			source = source0;
-		s_size = strsep_wrapper(&linedup, " \t");
+		s_size0 = strsep_wrapper(&linedup, " \t");
+		if(use_altsize)
+			s_size = altsize;
+		else
+			s_size = s_size0;
 		if(!name || !source0 || !s_size)
 			goto fail;
 		size = (uint)strtoul(s_size, nil, 10);
@@ -1021,7 +1028,7 @@ printentries(Entry *ents)
 void
 usage(void)
 {
-	dprintf(2, "usage: mkproto [-dvnc] -f protofile [-o output]\n");
+	dprintf(2, "usage: mkproto [-dvnc] -f protofile [-o output] [-s size]\n");
 	exit(0);
 }
 
@@ -1041,8 +1048,10 @@ main(int argc, char *argv[])
 	havefile = 0;
 	fsbootable = 0;
 	kernbrand = 0;
+	use_altfsfile = 0;
+	use_altsize = 0;
 
-	while((ch = getopt(argc, argv, "dvncf:o:")) != -1){
+	while((ch = getopt(argc, argv, "dvncf:o:s:")) != -1){
 		switch(ch){
 		case 'd':
 			debug = 1;
@@ -1063,6 +1072,10 @@ main(int argc, char *argv[])
 		case 'o':
 			use_altfsfile = 1;
 			altfsfile = strdup(optarg);
+			break;
+		case 's':
+			use_altsize = 1;
+			altsize = strdup(optarg);
 			break;
 		case '?':
 		default:

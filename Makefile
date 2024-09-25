@@ -41,7 +41,7 @@ OBJS = \
 #TOOLPREFIX = /usr/local/bin/
 # If the makefile can't find QEMU, specify its path here
 QEMU = qemu-system-i386
-
+FSFILE=newfs.img
 ARCH=i386
 XV6DIR = $(shell pwd)
 MKFSCC = /usr/bin/clang
@@ -222,13 +222,16 @@ UPROGS=\
 	_argstest\
 	_chperms\
 
-fs.img: mkfs_vsd $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
-	./mkfs_vsd fs.img VSDSYS $(UPROGS) kernel.elf kernel.bin bootelf bootbin @passwd @devices @rc @motd
+oldfs.img: mkfs_vsd $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
+	./mkfs_vsd oldfs.img VSDSYS $(UPROGS) kernel.elf kernel.bin bootelf bootbin @passwd @devices @rc @motd
 	dd if=vsdmbr of=fs.img conv=notrunc
 
 newfs.img: mkproto $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
 	./mkproto -f Tools/rootfs_proto -o newfs.img
 	dd if=vsdmbr of=newfs.img conv=notrunc
+
+fs.img: $(FSFILE)
+	cp $(FSFILE) fs.img
 
 fs.qcow: fs.img
 	qemu-img convert -O qcow2 fs.img fs.qcow
@@ -241,8 +244,8 @@ clean:
 	initcode initcode.out kernel.bin kernel.elf xv6.img \
 	fs.img kernelmemfs mkfs .gdbinit libc.a vsdmbr bootelf \
 	*.o_ bootbin initkern initkern.out fs.qcow $(UPROGS) \
-	mkfs_vsd mkproto newfs.img
+	mkfs_vsd mkproto newfs.img oldfs.img
 
 fsclean:
-	rm -f mkfs_vsd mkproto mkfs fs.img
+	rm -f mkfs_vsd mkproto mkfs fs.img newfs.img oldfs.img
 

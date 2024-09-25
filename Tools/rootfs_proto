@@ -12,9 +12,7 @@ file etc passwd @passwd -1 u:rw w:r
 file etc motd @motd -1 u:rw w:r
 
 file boot kernel.elf kernel.elf -1 u:rw w:r
-file boot kernel.bin kernel.bin -1 u:rw w:r
 file boot bootelf bootelf -1 u:rw w:r
-file boot bootbin bootbin -1 u:rw w:r
 
 file bin  cat   _cat -1 u:rx w:rx
 file bin  echo   _echo -1 u:rx w:rx
@@ -31,7 +29,6 @@ file bin  login   _login -1 u:rx w:rx
 file bin  chroot   _chroot -1 u:rx w:rx
 file bin  cp   _cp -1 u:rx w:rx
 file bin  uname   _uname -1 u:rx w:rx
-file bin  errtest   _errtest -1 u:rx w:rx
 file bin  devd   _devd -1 u:rx w:rx
 file bin  sleep   _sleep -1 u:rx w:rx
 file bin  disallow   _disallow -1 u:rx w:rx
@@ -56,6 +53,7 @@ file test  msgtest   _msgtest -1 u:rx w:rx
 file test  malloctest   _malloctest -1 u:rx w:rx
 file test  clonemalloc   _clonemalloc -1 u:rx w:rx
 file test  argstest   _argstest -1 u:rx w:rx
+file test  errtest   _errtest -1 u:rx w:rx
 
 kernel kernel.elf
 boot bootelf
