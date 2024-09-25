@@ -926,10 +926,6 @@ parseentrystring(char *line)
 		size = (uint)strtoul(s_size, nil, 10);
 		ent = makeentry(nil, FSYS, name, "", source, size, 0, 0);
 		active = doentry(ent);
-//		free(ent->name);
-//		free(ent->home);
-//		free(ent->source);
-//		free(ent);
 		addentry(ent);
 	} else if(!strcmp(token, "direct")) {
 		name = strsep_wrapper(&linedup, " \t");
