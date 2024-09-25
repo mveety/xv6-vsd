@@ -104,6 +104,7 @@ struct Entry {
 int verbose;
 int debug;
 int neuter;
+int use_altfsfile;
 
 char zeroes[BSIZE];
 Fs *active;
@@ -113,6 +114,7 @@ int bootino;
 int kernbrand;
 int kernino;
 uint blocks_used;
+char *altfsfile;
 
 void*
 emallocz(size_t size)
@@ -553,10 +555,10 @@ makefs(char *file, char *label, uint size, uint logsize, uint ninodes)
 	for(i = 0; i < nmeta; i++)
 		newfs->bmap[i/8] |= 1 << (i %8);
 
-	dprintf(2, "mkproto: vsd new filesystem\n");
-	dprintf(2, "mkproto: label %s, version %d\n", newfs->sb.label, newfs->sb.version);
-	dprintf(2, "mkproto: meta %d (boot, super, log %u, inode %u, bitmap %u) blocks %d total %d\n",
-				 nmeta, nlog, ninodeblocks, nbitmap, nblocks, newfs->size);
+	dprintf(2, "mkproto: %s: vsd new filesystem\n", file);
+	dprintf(2, "mkproto: %s: label %s, version %d\n", file, newfs->sb.label, newfs->sb.version);
+	dprintf(2, "mkproto: %s: meta %d (boot, super, log %u, inode %u, bitmap %u) blocks %d total %d\n",
+				 file, nmeta, nlog, ninodeblocks, nbitmap, nblocks, newfs->size);
 
 	// ream the filesystem
 	dprintf(2, "mkproto: reaming %s", label);
@@ -896,6 +898,7 @@ parseentrystring(char *line)
 
 	char *name;
 	char  *home;
+	char *source0;
 	char *source;
 	char *s_owner;
 	int owner;
@@ -919,9 +922,13 @@ parseentrystring(char *line)
 	}
 	if(!strcmp(token, "fsys")){
 		name = strsep_wrapper(&linedup, " \t");
-		source = strsep_wrapper(&linedup, " \t");
+		source0 = strsep_wrapper(&linedup, " \t");
+		if(use_altfsfile)
+			source = altfsfile;
+		else
+			source = source0;
 		s_size = strsep_wrapper(&linedup, " \t");
-		if(!name || !source || !s_size)
+		if(!name || !source0 || !s_size)
 			goto fail;
 		size = (uint)strtoul(s_size, nil, 10);
 		ent = makeentry(nil, FSYS, name, "", source, size, 0, 0);
@@ -1035,7 +1042,7 @@ main(int argc, char *argv[])
 	fsbootable = 0;
 	kernbrand = 0;
 
-	while((ch = getopt(argc, argv, "dvncf:")) != -1){
+	while((ch = getopt(argc, argv, "dvncf:o:")) != -1){
 		switch(ch){
 		case 'd':
 			debug = 1;
@@ -1052,6 +1059,10 @@ main(int argc, char *argv[])
 		case 'f':
 			havefile = 1;
 			protofile = optarg;
+			break;
+		case 'o':
+			use_altfsfile = 1;
+			altfsfile = strdup(optarg);
 			break;
 		case '?':
 		default:
