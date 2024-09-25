@@ -83,6 +83,10 @@ ideinit(void)
 	devsw[6].write = ide_write;
 	diskid = register_disk(0, &iderw, nil);
 	cprintf("cpu%d: ide: registered ide disk 0 as disk%d\n", cpu->id, diskid);
+	if(havedisk1){
+		diskid = register_disk(1, &iderw, nil);
+		cprintf("cpu%d: ide: registered ide disk 0 as disk%d\n", cpu->id, diskid);
+	}
 }
 
 // Start the request for b.  Caller must hold idelock.

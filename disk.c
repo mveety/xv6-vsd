@@ -51,6 +51,7 @@ register_disk(uint realdisk, void (*realrw)(struct buf*), void *aux)
 
 	for(i = 0; i < DISKMAX; i++)
 		if(!(disks[i].flags & DRIVER_INUSE)){
+			disks[i].flags |= DRIVER_INUSE;
 			disks[i].driver_device = realdisk;
 			disks[i].diskrw = realrw;
 			disks[i].aux = aux;
