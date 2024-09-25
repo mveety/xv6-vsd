@@ -1021,7 +1021,7 @@ printentries(Entry *ents)
 void
 usage(void)
 {
-	dprintf(2, "usage: mkproto [-dvnc] -f protofile\n");
+	dprintf(2, "usage: mkproto [-dvnc] -f protofile [-o output]\n");
 	exit(0);
 }
 
