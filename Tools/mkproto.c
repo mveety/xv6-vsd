@@ -548,6 +548,7 @@ makefs(char *file, char *label, uint size, uint logsize, uint ninodes)
 	newfs->sb.bootable = 0;
 	newfs->sb.system = 1;
 	newfs->sb.bootinode = 0;
+	newfs->sb.size = size;
 	newfs->bmap = emallocz(nbitmap*BSIZE);
 	newfs->freeinode = 1;
 	newfs->size = size;
