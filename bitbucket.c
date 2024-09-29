@@ -15,6 +15,7 @@
 struct spinlock null_lock;
 struct spinlock zero_lock;
 struct spinlock rob_lock;
+int robcounter;
 
 int bitbucket_read(struct inode*, char*, int, int);
 int bitbucket_write(struct inode*, char*, int, int);
@@ -34,6 +35,7 @@ bitbucket_init(void)
 	initlock(&zero_lock, "zero dev");
 	initlock(&rob_lock, "rob pike's lock");
 
+	robcounter = 0;
 	devsw[2].write = &bitbucket_write;
 	devsw[2].read = &bitbucket_read;
 };
@@ -108,23 +110,22 @@ zerorw(int dir, char *bf, int nbytes)
 int
 robrw(int dir, char *bf, int nbytes)
 {
-	char *rbf;
+	char quote[] = "I'd spell creat with an e.\n";
+	int readlen;
 
 	Lock(rob_lock);
-	rbf = bf;
+	if(robcounter >= sizeof(quote))
+		robcounter = 0;
 	if(dir == 0){
-		for(int i = 1; i < nbytes+1; i++){
-			if(i%2 == 0)
-				rbf[i-1] = 'N';
-			else
-				rbf[i-1] = 'o';
-		}
+		readlen = nbytes <= (sizeof(quote) - robcounter) ? nbytes : sizeof(quote) - robcounter;
+		memcpy(bf, quote+robcounter, readlen);
+		robcounter += readlen;
 		Unlock(rob_lock);
-		return nbytes;
+		return readlen;
 	} else if(dir == 1) {
 		seterr(EDFUCKYOU);
 		Unlock(rob_lock);
-		return nbytes;
+		return 0;
 	}
 	return -1;
 }
