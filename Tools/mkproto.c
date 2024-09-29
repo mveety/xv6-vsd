@@ -19,6 +19,8 @@
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
+#define LIBLOCK(i, sb)     ((i) / IPB + sb.inodestart)
+
 #define sysperms U_READ|W_READ
 #define binperms U_READ|U_EXEC|W_READ|W_EXEC
 #define etcperms U_READ|U_WRITE|W_READ
@@ -349,7 +351,7 @@ rinode(Fs *fs, uint inum, struct dinode *ip)
 	uint bn;
 	struct dinode *dip;
 
-	bn = IBLOCK(inum, fs->sb);
+	bn = LIBLOCK(inum, fs->sb);
 	rsect(fs, buf, bn);
 	dip = ((struct dinode*)buf) + (inum % IPB);
 	*ip = *dip;
@@ -362,7 +364,7 @@ winode(Fs *fs, uint inum, struct dinode *ip)
 	uint bn;
 	struct dinode *dip;
 
-	bn = IBLOCK(inum, fs->sb);
+	bn = LIBLOCK(inum, fs->sb);
 	rsect(fs, buf, bn);
 	dip = ((struct dinode*)buf) + (inum % IPB);
 	*dip = *ip;
