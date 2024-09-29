@@ -56,7 +56,7 @@ int				fileseek(struct file*, int n, int dir);
 
 // fs.c
 void            readsb(int dev, struct superblock *sb);
-int             dirlink(struct inode*, char*, uint);
+int     dirlink(struct inode*, char*, uint);
 struct inode*   dirlookup(struct inode*, char*, uint*);
 struct inode*   ialloc(uint, short);
 struct inode*   iget(uint, uint);
@@ -66,8 +66,12 @@ void            iinit(int dev);
 void            ilock(struct inode*);
 void            iput(struct inode*);
 void            iunlock(struct inode*);
+void		iref(struct inode*);
+void		iunref(struct inode*);
 void            iunlockput(struct inode*);
 void			iunlockput_direct(struct inode*);
+int		imount(struct inode*, struct inode*);
+void		iunmount(struct inode*);
 void            iupdate(struct inode*);
 int             namecmp(const char*, const char*);
 struct inode*   namei(char*);
@@ -270,6 +274,15 @@ uint register_disk(uint, void (*realrw)(struct buf*), void*);
 int unregister_disk(uint);
 // the method
 void diskrw(struct buf*);
+// mark disks as mounted/unmounted
+int diskmount0(uint, struct superblock*);
+int diskmount1(uint, struct inode*);
+int diskmount(uint, struct inode*, struct superblock*);
+void diskunmount(uint);
+int diskmounted(uint);
+struct inode *diskroot(uint);
+struct superblock *getsuperblock(uint);
+
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

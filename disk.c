@@ -10,7 +10,8 @@
 #include "mmu.h"
 #include "proc.h"
 
-#define DRIVER_INUSE 1
+#define DRIVER_INUSE (1<<0)
+#define DISK_MOUNTED (1<<1)
 
 struct disk {
 	u16int flags;
@@ -18,6 +19,8 @@ struct disk {
 	uint driver_device;
 	void (*diskrw)(struct buf*);
 	void *aux;
+	struct inode *mountroot;
+	struct superblock sb;
 };
 
 struct disk disks[DISKMAX];
@@ -66,4 +69,74 @@ void
 diskrw(struct buf *b)
 {
 	disks[b->dev].diskrw(b);
+}
+
+int
+diskmounted(uint disk)
+{
+	if(disks[disk].flags & DISK_MOUNTED)
+		return 1;
+	return 0;
+}
+
+int
+diskmount0(uint disk, struct superblock *sb)
+{
+	if(diskmounted(disk))
+		return -1;
+	disks[disk].flags |= DISK_MOUNTED;
+	memcpy(&disks[disk].sb, sb, sizeof(struct superblock));
+	return 0;
+}
+
+int
+diskmount1(uint disk, struct inode *mountroot)
+{
+	if(!diskmounted(disk))
+		return -1;
+	disks[disk].mountroot = mountroot;
+	return 0;
+}
+
+int
+diskmount(uint disk, struct inode *mountroot, struct superblock *sb)
+{
+	if(diskmounted(disk))
+		return -1;
+	disks[disk].mountroot = mountroot;
+	disks[disk].flags |= DISK_MOUNTED;
+	memcpy(&disks[disk].sb, sb, sizeof(struct superblock));
+	return 0;
+}
+
+void
+diskunmount(uint disk)
+{
+	if(diskmounted(disk)){
+		disks[disk].mountroot = nil;
+		disks[disk].flags &= ~DISK_MOUNTED;
+	}
+}
+
+struct inode*
+diskroot(uint disk)
+{
+	if(diskmounted(disk))
+		return disks[disk].mountroot;
+	return nil;
+}
+
+struct superblock*
+getsuperblock(uint disk)
+{
+	if(diskmounted(disk))
+		return &disks[disk].sb;
+	return nil;
+}
+
+void
+setsuperblock(uint disk, struct superblock *sb)
+{
+	if(diskmounted(disk))
+		memcpy(&disks[disk].sb, sb, sizeof(struct superblock));
 }

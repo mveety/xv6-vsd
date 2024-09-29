@@ -23,7 +23,8 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 static void itrunc(struct inode*);
 static int bmap_g(struct inode*, uint, int);
-struct superblock sb;   // there should be one per dev, but we run with one dev
+void imount0(struct inode*, struct inode*, struct inode*);
+// struct superblock sb;   // there should be one per dev, but we run with one dev
 int havesysfs = 0;
 struct inode *rootdir;
 
@@ -34,7 +35,7 @@ readsb(int dev, struct superblock *sb)
 	struct buf *bp;
 	
 	bp = bread(dev, 1);
-	memmove(sb, bp->data, sizeof(*sb));
+	memmove(sb, bp->data, sizeof(struct superblock));
 	brelse(bp);
 }
 
@@ -58,11 +59,13 @@ balloc(uint dev)
 {
 	int b, bi, m;
 	struct buf *bp;
+	struct superblock *sb;
 
+	sb = getsuperblock(dev);
 	bp = 0;
-	for(b = 0; b < sb.size; b += BPB){
+	for(b = 0; b < sb->size; b += BPB){
 		bp = bread(dev, BBLOCK(b, sb));
-		for(bi = 0; bi < BPB && b + bi < sb.size; bi++){
+		for(bi = 0; bi < BPB && b + bi < sb->size; bi++){
 			m = 1 << (bi % 8);
 			if((bp->data[bi/8] & m) == 0){  // Is block free?
 				bp->data[bi/8] |= m;  // Mark block in use.
@@ -84,8 +87,9 @@ bfree(int dev, uint b)
 {
 	struct buf *bp;
 	int bi, m;
+	struct superblock *sb;
 
-	readsb(dev, &sb);
+	sb = getsuperblock(dev);
 	bp = bread(dev, BBLOCK(b, sb));
 	bi = b % BPB;
 	m = 1 << (bi % 8);
@@ -181,17 +185,26 @@ offset2real(uint off)
 void
 fsinit(int dev)
 {
+	struct superblock sb;
+
+	readsb(dev, &sb);
+	diskmount0(dev, &sb);
 	iinit(dev);
 	initlog(dev);
 	rootdir = iget(dev, ROOTINO);
+	imount0(rootdir, rootdir, rootdir);
+	diskmount1(dev, rootdir);
 }
 
 void
 iinit(int dev)
 {
+	struct inode *rootinode;
+	struct superblock sb;
+
 	initlock(&icache.lock, "icache");
 	readsb(dev, &sb);
-	cprintf("fs: disk%d: using vsd filesystem\n", dev);
+	cprintf("fs: disk%d: using vsd filesystem version %d\n", dev, sb.version);
 	if(sb.bootinode > 0)
 		cprintf("fs: disk%d: bootloader at inode %u\n", dev, sb.bootinode);
 	if(sb.kerninode > 0)
@@ -201,7 +214,8 @@ iinit(int dev)
 		cprintf(" (bootable)");
 	if(sb.system)
 		cprintf(" (system)");
-	cprintf("\nfs: disk%d: sb: size %d nblocks %d ninodes %d nlog %d logstart %d\nfs: sb: inodestart %d bmap start %d\n", dev, sb.size, sb.nblocks, sb.ninodes, sb.nlog, sb.logstart, sb.inodestart, sb.bmapstart);
+
+	cprintf("\nfs: disk%d: sb: size %d nblocks %d ninodes %d nlog %d logstart %d\nfs: disk%d: sb: inodestart %d bmap start %d\n", dev, sb.size, sb.nblocks, sb.ninodes, sb.nlog, sb.logstart, dev, sb.inodestart, sb.bmapstart);
 	if(!sb.system && !havesysfs)
 		panic("given disk is not a system disk");
 	havesysfs = 1;
@@ -216,8 +230,10 @@ ialloc(uint dev, short type)
 	int inum;
 	struct buf *bp;
 	struct dinode *dip;
+	struct superblock *sb;
 
-	for(inum = 1; inum < sb.ninodes; inum++){
+	sb = getsuperblock(dev);
+	for(inum = 1; inum < sb->ninodes; inum++){
 		bp = bread(dev, IBLOCK(inum, sb));
 		dip = (struct dinode*)bp->data + inum%IPB;
 		if(dip->type == 0){  // a free inode
@@ -239,7 +255,9 @@ iupdate1(struct inode *ip, int direct)
 {
 	struct buf *bp;
 	struct dinode *dip;
+	struct superblock *sb;
 
+	sb = getsuperblock(ip->dev);
 	bp = bread(ip->dev, IBLOCK(ip->inum, sb));
 	dip = (struct dinode*)bp->data + ip->inum%IPB;
 	dip->type = ip->type;
@@ -283,6 +301,11 @@ iget(uint dev, uint inum)
 	empty = 0;
 	for(ip = &icache.inode[0]; ip < &icache.inode[NINODE]; ip++){
 		if(ip->ref > 0 && ip->dev == dev && ip->inum == inum){
+			if(ip->flags & I_MOUNTPOINT){
+//				cprintf("fs: dev%d(%d) is a mount point. returning dev%d(%d)\n",
+//						ip->dev, ip->inum, ip->mountroot->dev, ip->mountroot->inum);
+				ip = ip->mountroot;
+			}
 			ip->ref++;
 			release(&icache.lock);
 			return ip;
@@ -325,12 +348,14 @@ ilock(struct inode *ip)
 {
 	struct buf *bp;
 	struct dinode *dip;
+	struct superblock *sb;
 
 	if(ip == 0 || ip->ref < 1){
-		cprintf("error: fs: inode &%p has negative refs or does not exist. run fsck.\n", ip);
+		cprintf("error: fs: inode &%p has negative refs or does not exist.\n", ip);
 		return;
 	}
 
+	sb = getsuperblock(ip->dev);
 	acquire(&icache.lock);
 	while(ip->flags & I_BUSY)
 		sleep(ip, &icache.lock);
@@ -359,14 +384,49 @@ ilock(struct inode *ip)
 void
 iunlock(struct inode *ip)
 {
-	if(ip == 0 || !(ip->flags & I_BUSY) || ip->ref < 1){
+	if(ip == 0 || ip->ref < 1){
 		cprintf("error: fs: inode &%p has negative refs or does not exist. run fsck.\n", ip);
 		return;
 	}
-
+	if(!(ip->flags & I_BUSY)){
+		cprintf("error: fs: inode dev%d(%d): trying to unlock unlocked inode\n", ip->dev, ip->inum);
+		return;
+	}
 	acquire(&icache.lock);
 	ip->flags &= ~I_BUSY;
 	wakeup(ip);
+	release(&icache.lock);
+}
+
+void
+iref(struct inode *ip)
+{
+	if(ip == nil){
+		cprintf("error: fs: unable to increase refcount on nil inode\n");
+		return;
+	}
+	acquire(&icache.lock);
+	ip->ref++;
+	release(&icache.lock);
+}
+
+void
+iunref(struct inode *ip)
+{
+	if(ip == 0){
+		cprintf("error: fs: unable to increase refcount on nil inode\n", ip);
+		return;
+	}
+	if(ip->ref < 1){
+		cprintf("error: fs: inode dev%d(%d) has negative refs\n", ip->dev, ip->inum);
+		return;
+	}
+	if(ip->ref == 0){
+		cprintf("error: fs: inode dev%d(%d) is already not referenced\n", ip->dev, ip->inum);
+		return;
+	}
+	acquire(&icache.lock);
+	ip->ref--;
 	release(&icache.lock);
 }
 
@@ -423,6 +483,81 @@ iunlockput_direct(struct inode *ip)
 {
 	iunlock(ip);
 	iput_direct(ip);
+}
+
+void
+imount0(struct inode *mroot, struct inode *mpoint, struct inode *parent)
+{
+	ilock(mroot);
+	if(parent != mroot)
+		ilock(parent);
+	if(mpoint != mroot)
+		ilock(mpoint);
+
+	// increment the reference count on these inodes so they don't get freed from
+	// the cache
+	iref(parent);
+	iref(mpoint);
+	iref(mroot);
+
+	mpoint->flags |= I_MOUNTPOINT;
+	mroot->flags |= I_MOUNTROOT;
+
+	mpoint->mountroot = mroot;
+	mroot->mountparent = parent;
+
+	iunlock(mroot);
+	if(parent != mroot)
+		iunlock(parent);
+	if(mpoint != mroot)
+		iunlock(mpoint);
+}
+
+int
+imount(struct inode *mroot, struct inode *mpoint)
+{
+	struct inode *parent;
+	uint poff; // unused
+
+	if(mpoint->type != T_DIR){
+		cprintf("error: fs: tried to mount disk%d(%d) on non-direct disk%d(%d)\n",
+				mroot->dev, mroot->inum, mpoint->dev, mpoint->inum);
+		return -1;
+	}
+	parent = dirlookup(mpoint, "..", &poff);
+	if(!parent){
+		cprintf("error: fs: dev%d(%d) has no parent!\n", mpoint->dev, mpoint->inum);
+		return -1;
+	}
+	cprintf("cpu%d: fs: mount dev%d(%d) to dev%d(%d)\n", cpu->id, mroot->dev, mroot->inum,
+			mpoint->dev, mpoint->inum);
+	imount0(mroot, mpoint, parent);
+	return 0;
+}
+
+void
+iunmount(struct inode *mroot)
+{
+	struct inode *parent;
+	struct inode *mpoint;
+
+	parent = mroot->mountparent;
+	mpoint = mroot->mountpoint;
+
+	ilock(mroot);
+	ilock(mpoint);
+	ilock(parent);
+
+	iunref(mroot);
+	iunref(mpoint);
+	iunref(parent);
+
+	mpoint->flags &= ~I_MOUNTPOINT;
+	mroot->flags &= ~I_MOUNTROOT;
+
+	iunlock(mroot);
+	iunlock(mpoint);
+	iunlock(parent);
 }
 
 // Return the disk block address of the nth block in inode ip.
@@ -614,7 +749,7 @@ dirlookup(struct inode *dp, char *name, uint *poff)
 
 	if(dp->type != T_DIR)
 		panic("dirlookup not DIR");
-//	cprintf("fs: looking for %s in inode %d\n", name, dp->inum);
+//	cprintf("fs: looking for %s in inode dev%d(%d)\n", name, dp->dev, dp->inum);
 	for(off = 0; off < dp->size; off += sizeof(de)){
 		if(readi(dp, (char*)&de, off, sizeof(de)) != sizeof(de))
 			panic("dirlink read");
@@ -625,6 +760,12 @@ dirlookup(struct inode *dp, char *name, uint *poff)
 			// entry matches path element
 			if(poff)
 				*poff = off;
+			if((namecmp("..", de.name) == 0) && (dp->flags & I_MOUNTROOT)){
+				cprintf("fs: dev%d(%d) is a mounted root. returning dev%d(%d) for ..\n",
+						dp->dev, dp->inum, dp->mountparent->dev,
+						dp->mountparent->inum);
+				return iget(dp->mountparent->dev, dp->mountparent->inum);
+			}
 			inum = de.inum;
 			return iget(dp->dev, inum);
 		}
@@ -712,9 +853,7 @@ namex(char *path, int nameiparent, char *name)
 {
 	struct inode *ip, *next;
 
-	if(proc == nil) // bootstrap init
-		ip = iget(ROOTDEV, ROOTINO);
-	else
+	if(proc != nil) {
 		if(*path == '/'){
 			if(proc->rootdir == nil)
 					ip = idup(rootdir);
@@ -722,7 +861,8 @@ namex(char *path, int nameiparent, char *name)
 				ip = idup(proc->rootdir);
 		} else
 			ip = idup(proc->cwd);
-
+	} else
+		ip = idup(rootdir);
 	while((path = skipelem(path, name)) != 0){
 		ilock(ip);
 		if(ip->type != T_DIR){

@@ -17,6 +17,14 @@ main(void)
 
 	uid = getuid();
 	sid = getsid();
+
+	// because of changes in the kernel we can't assume what device will be root
+	// therefore we do it once the kernel is done. init is the first process and all
+	// children will inherit it's cwd. prior to this point proc->cwd == nil which
+	// won't cause crashes (per se) but won't do
+	if(chdir("/") < 0)
+		return 0;
+
 	if(open("/dev/syscons", O_RDWR) < 0){
 		if(mkdir("/dev") == 0){
 			mknod("/dev/syscons", 1, 1);

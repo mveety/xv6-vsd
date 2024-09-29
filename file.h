@@ -16,6 +16,18 @@ struct inode {
 	int ref;            // Reference count
 	int flags;          // I_BUSY, I_VALID
 
+	// if flags&I_MOUNTPOINT operations will 
+	// redirect to mountroot. mountroot is the
+	// mounted root inode for a filesystem.
+	struct inode *mountroot;
+	// if flags&I_MOUNTROOT then lookups for
+	// '..' in this inode will return mountparent
+	// mountparent is the parent of the mountpoint.
+	// mountpoint is the mountpoint proper, but is really
+	// only used for unmounting
+	struct inode *mountparent;
+	struct inode *mountpoint;
+
 	short type;         // copy of disk inode
 	short major;
 	short minor;
@@ -28,8 +40,10 @@ struct inode {
 };
 
 // state information
-#define I_BUSY 0x1
-#define I_VALID 0x2
+#define I_BUSY (1<<0)
+#define I_VALID (1<<1)
+#define I_MOUNTPOINT (1<<2)
+#define I_MOUNTROOT (1<<3)
 
 // user permissions
 #define U_READ (1<<0)
