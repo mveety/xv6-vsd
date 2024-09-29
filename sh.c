@@ -575,7 +575,6 @@ addpath(char *cmd)
 	memmove(bf, path, pathlen);
 	memmove(bf+pathlen, cmd, cmdlen);
 	bf[pathlen+cmdlen] = '\0';
-	printf(2, "sh bf = %s\n", bf);
 	return bf;
 }
 
