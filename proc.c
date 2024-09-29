@@ -8,6 +8,8 @@
 #include "spinlock.h"
 #include "elf.h"
 #include "users.h"
+#include "fs.h"
+#include "file.h"
 
 // defs for functions in vm.c
 extern pte_t* walkpgdir(pde_t*, const void*, int);
@@ -437,6 +439,7 @@ exit(void)
 {
 	struct proc *p;
 	int fd, i;
+	struct inode *cwdir;
 
 	if(proc == initproc)
 		panic("init exiting");
@@ -447,9 +450,10 @@ exit(void)
 			proc->ofile[fd] = 0;
 		}
 	}
-	begin_op();
+
+	begin_op(proc->cwd->dev);
 	iput(proc->cwd);
-	end_op();
+	end_op(proc->cwd->dev);
 	proc->cwd = 0;
 
 	if(proc->type == PROCESS){

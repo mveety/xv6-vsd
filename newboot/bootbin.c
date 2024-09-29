@@ -1,5 +1,9 @@
-// bootelf -- new bootloader for vsd
+// bootbin -- new bootloader for vsd
+struct spinlock { // fake spinlock for fs.h
+	int x;
+};
 
+#include "param.h"
 #include "types.h"
 #include "elf.h"
 #include "x86.h"

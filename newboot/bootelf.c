@@ -1,13 +1,16 @@
 // bootelf -- new bootloader for vsd
 
+struct spinlock { // fake spinlock for fs.h
+	int x;
+};
+
+#include "param.h"
 #include "types.h"
 #include "elf.h"
 #include "x86.h"
 #include "memlayout.h"
 #include "kbd.h"
 #include "fs.h"
-
-#define COM1 0x3f8
 
 int cur_line, cur_col, stiter;
 char *heap;

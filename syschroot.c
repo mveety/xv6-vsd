@@ -45,21 +45,21 @@ chroot(char *path)
 		return -1;
 	if(proc->uid != -1)
 		return -1;
-	begin_op();
-	rp = namei(path);
+	if(path[0] != '/')
+		return -1;
+	rp = namei_direct(path);
 	if(rp == 0){
 		return -1;
 	} else if(rp->inum == rootdir->inum){
 		proc->rootdir = nil;
 		return 0;
 	}
-	if(path[0] != '/')
-		return -1;
+	begin_op(rp->dev);
 	ilock(rp);
 	pathlen = strlen(path) + 1;
 	if(pathlen >= 122){
 		iunlockput(rp);
-		end_op();
+		end_op(rp->dev);
 		return -1;
 	}
 	memcpy(pathbf, path, pathlen);
@@ -69,7 +69,7 @@ chroot(char *path)
 	}
 	if(rp->type != T_DIR){
 		iunlockput(rp);
-		end_op();
+		end_op(rp->dev);
 		return -1;
 	}
 	safestrcpy(proc->rdirpath, pathbf, 128);
@@ -78,5 +78,6 @@ chroot(char *path)
 	proc->rootdir = idup(rp);
 	proc->cwd = proc->rootdir;
 	proc->injail = 1;
+	end_op(rp->dev);
 	return 0;
 }

@@ -12,6 +12,7 @@
 
 #define DRIVER_INUSE (1<<0)
 #define DISK_MOUNTED (1<<1)
+#define DISK_INITIALIZED (1<<2)
 
 struct disk {
 	u16int flags;
@@ -21,6 +22,7 @@ struct disk {
 	void *aux;
 	struct inode *mountroot;
 	struct superblock sb;
+	struct log *log;
 };
 
 struct disk disks[DISKMAX];
@@ -86,6 +88,7 @@ diskmount0(uint disk, struct superblock *sb)
 		return -1;
 	disks[disk].flags |= DISK_MOUNTED;
 	memcpy(&disks[disk].sb, sb, sizeof(struct superblock));
+	disks[disk].log = kmallocz(sizeof(struct log));
 	return 0;
 }
 
@@ -95,6 +98,7 @@ diskmount1(uint disk, struct inode *mountroot)
 	if(!diskmounted(disk))
 		return -1;
 	disks[disk].mountroot = mountroot;
+	disks[disk].flags |= DISK_INITIALIZED;
 	return 0;
 }
 
@@ -115,6 +119,8 @@ diskunmount(uint disk)
 	if(diskmounted(disk)){
 		disks[disk].mountroot = nil;
 		disks[disk].flags &= ~DISK_MOUNTED;
+		disks[disk].flags &= ~DISK_INITIALIZED;
+		kmfree(disks[disk].log);
 	}
 }
 
@@ -139,4 +145,12 @@ setsuperblock(uint disk, struct superblock *sb)
 {
 	if(diskmounted(disk))
 		memcpy(&disks[disk].sb, sb, sizeof(struct superblock));
+}
+
+struct log*
+getlog(uint disk)
+{
+	if(diskmounted(disk))
+		return disks[disk].log;
+	return nil;
 }

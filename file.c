@@ -5,10 +5,10 @@
 #include "types.h"
 #include "errstr.h"
 #include "defs.h"
+#include "spinlock.h"
 #include "param.h"
 #include "fs.h"
 #include "file.h"
-#include "spinlock.h"
 #include "mmu.h"
 #include "proc.h"
 #include "users.h"
@@ -153,9 +153,9 @@ fileclose(struct file *f)
 	if(ff.type == FD_PIPE)
 		pipeclose(ff.pipe, ff.writable);
 	else if(ff.type == FD_INODE){
-		begin_op();
+		begin_op(ff.ip->dev);
 		iput(ff.ip);
-		end_op();
+		end_op(ff.ip->dev);
 	}
 }
 
@@ -261,12 +261,12 @@ filewrite(struct file *f, char *addr, int n)
 			if(n1 > max)
 				n1 = max;
 
-			begin_op();
+			begin_op(f->ip->dev);
 			ilock(f->ip);
 			if ((r = writei(f->ip, addr + i, f->off, n1)) > 0)
 				f->off += r;
 			iunlock(f->ip);
-			end_op();
+			end_op(f->ip->dev);
 
 			if(r == -2){
 				seterr(EIFSFULL);

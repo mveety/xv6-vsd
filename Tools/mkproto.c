@@ -7,11 +7,16 @@
 #include <limits.h>
 #include <ctype.h>
 
+// because log is included in fs.h
+struct spinlock {
+	int x;
+};
+
 #define stat xv6_stat
+#include "../param.h"
 #include "../types.h"
 #include "../fs.h"
 #include "../stat.h"
-#include "../param.h"
 
 #ifndef static_assert
 #define static_assert(a, b) do { switch (0) case 0: case (a): ; } while (0)

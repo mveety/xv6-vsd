@@ -1,3 +1,8 @@
+struct spinlock { // fake spinlock for fs.h
+	int x;
+};
+
+#include "param.h"
 #include "types.h"
 #include "x86.h"
 #include "fs.h"

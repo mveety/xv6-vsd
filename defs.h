@@ -76,6 +76,8 @@ void            iupdate(struct inode*);
 int             namecmp(const char*, const char*);
 struct inode*   namei(char*);
 struct inode*   nameiparent(char*, char*);
+struct inode*   namei_direct(char*);
+struct inode*   nameiparent_direct(char*, char*);
 int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
@@ -113,10 +115,10 @@ void            lapicstartap(uchar, uint);
 void            microdelay(int);
 
 // log.c
-void            initlog(int dev);
+void            initlog(uint dev);
 void            log_write(struct buf*);
-void            begin_op();
-void            end_op();
+void            begin_op(uint dev);
+void            end_op(uint dev);
 
 // mp.c
 extern int      ismp;
@@ -282,6 +284,7 @@ void diskunmount(uint);
 int diskmounted(uint);
 struct inode *diskroot(uint);
 struct superblock *getsuperblock(uint);
+struct log *getlog(uint);
 
 
 // number of elements in fixed-size array

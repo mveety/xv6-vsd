@@ -205,17 +205,16 @@ iinit(int dev)
 	initlock(&icache.lock, "icache");
 	readsb(dev, &sb);
 	cprintf("fs: disk%d: using vsd filesystem version %d\n", dev, sb.version);
-	if(sb.bootinode > 0)
-		cprintf("fs: disk%d: bootloader at inode %u\n", dev, sb.bootinode);
+	cprintf("fs: disk%d: sb: size %d nblocks %d ninodes %d nlog %d logstart %d\nfs: disk%d: sb: inodestart %d bmap start %d", dev, sb.size, sb.nblocks, sb.ninodes, sb.nlog, sb.logstart, dev, sb.inodestart, sb.bmapstart);
+	if(sb.bootable && sb.bootinode > 0)
+		cprintf(" boot %u", sb.bootinode);
 	if(sb.kerninode > 0)
-		cprintf("fs: disk%d: kernel is at inode %u\n", dev, sb.kerninode);
-	cprintf("fs: disk%d: mounting volume %s, version %u", dev, sb.label, sb.version);
-	if(sb.bootable)
-		cprintf(" (bootable)");
+		cprintf(" kernel %u", sb.kerninode);
 	if(sb.system)
-		cprintf(" (system)");
+		cprintf(" system");
+	cprintf("\n");
 
-	cprintf("\nfs: disk%d: sb: size %d nblocks %d ninodes %d nlog %d logstart %d\nfs: disk%d: sb: inodestart %d bmap start %d\n", dev, sb.size, sb.nblocks, sb.ninodes, sb.nlog, sb.logstart, dev, sb.inodestart, sb.bmapstart);
+	cprintf("fs: disk%d: mounting volume %s, version %u\n", dev, sb.label, sb.version);
 	if(!sb.system && !havesysfs)
 		panic("given disk is not a system disk");
 	havesysfs = 1;
@@ -849,7 +848,7 @@ skipelem(char *path, char *name)
 // path element into name, which must have room for DIRSIZ bytes.
 // Must be called inside a transaction since it calls iput().
 static struct inode*
-namex(char *path, int nameiparent, char *name)
+namex(char *path, int nameiparent, char *name, int direct)
 {
 	struct inode *ip, *next;
 
@@ -866,7 +865,10 @@ namex(char *path, int nameiparent, char *name)
 	while((path = skipelem(path, name)) != 0){
 		ilock(ip);
 		if(ip->type != T_DIR){
-			iunlockput(ip);
+			if(direct)
+				iunlockput_direct(ip);
+			else
+				iunlockput(ip);
 			return 0;
 		}
 		if(nameiparent && *path == '\0'){
@@ -875,14 +877,23 @@ namex(char *path, int nameiparent, char *name)
 			return ip;
 		}
 		if((next = dirlookup(ip, name, 0)) == 0){
-			iunlockput(ip);
+			if(direct)
+				iunlockput_direct(ip);
+			else
+				iunlockput(ip);
 			return 0;
 		}
-		iunlockput(ip);
+		if(direct)
+			iunlockput_direct(ip);
+		else
+			iunlockput(ip);
 		ip = next;
 	}
 	if(nameiparent){
-		iput(ip);
+		if(direct)
+			iput_direct(ip);
+		else
+			iput(ip);
 		return 0;
 	}
 	return ip;
@@ -892,11 +903,24 @@ struct inode*
 namei(char *path)
 {
 	char name[DIRSIZ];
-	return namex(path, 0, name);
+	return namex(path, 0, name, 0);
 }
 
 struct inode*
 nameiparent(char *path, char *name)
 {
-	return namex(path, 1, name);
+	return namex(path, 1, name, 0);
+}
+
+struct inode*
+namei_direct(char *path)
+{
+	char name[DIRSIZ];
+	return namex(path, 0, name, 1);
+}
+
+struct inode*
+nameiparent_direct(char *path, char *name)
+{
+	return namex(path, 1, name, 1);
 }

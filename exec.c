@@ -4,6 +4,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "defs.h"
+#include "spinlock.h"
 #include "fs.h"
 #include "file.h"
 #include "errstr.h"
@@ -23,13 +24,12 @@ exec(char *path, char **argv)
 	pde_t *pgdir, *oldpgdir;
 
 	fail(proc->type == THREAD, EPTHREADEXEC, -1);
-	begin_op();
-	if((ip = namei(path)) == 0){
-		end_op();
+
+	if((ip = namei_direct(path)) == 0){
 		seterr(EPCANTFIND);
 		return -1;
 	}
-
+	begin_op(ip->dev);
 	ilock(ip);
 	pgdir = 0;
 	if(checkinodeperm(ip, OP_EXEC) && singleuser == 0){
@@ -63,7 +63,7 @@ exec(char *path, char **argv)
 			goto bad;
 	}
 	iunlockput(ip);
-	end_op();
+	end_op(ip->dev);
 	ip = 0;
 
 	// Allocate two pages at the next page boundary.
@@ -116,7 +116,7 @@ exec(char *path, char **argv)
 		freevm(pgdir);
 	if(ip){
 		iunlockput(ip);
-		end_op();
+		end_op(ip->dev);
 	}
 	
 	return -1;

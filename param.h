@@ -15,3 +15,4 @@
 #define FSSIZE       5000  // size of file system in blocks
 #define THREADMAX    32  // the maximum number of child threads
 #define DISKMAX      32 // maximum number of disks we can track
+#define COM1 0x3f8 // first serial port (for bootelf)

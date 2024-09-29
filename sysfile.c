@@ -6,6 +6,7 @@
 
 #include "types.h"
 #include "defs.h"
+#include "spinlock.h"
 #include "param.h"
 #include "stat.h"
 #include "mmu.h"
@@ -138,17 +139,15 @@ sys_link(void)
 	if(argstr(0, &old) < 0 || argstr(1, &new) < 0)
 		return -1;
 
-	begin_op();
-	if((ip = namei(old)) == 0){
-		end_op();
+	if((ip = namei_direct(old)) == 0){
 		seterr(EICANTFIND);
 		return -1;
 	}
-
+	begin_op(ip->dev);
 	ilock(ip);
 	if(ip->type == T_DIR){
 		iunlockput(ip);
-		end_op();
+		end_op(ip->dev);
 		seterr(EILNDIR);
 		return -1;
 	}
@@ -170,7 +169,7 @@ sys_link(void)
 	iunlockput(dp);
 	iput(ip);
 
-	end_op();
+	end_op(ip->dev);
 
 	return 0;
 
@@ -179,7 +178,7 @@ bad:
 	ip->nlink--;
 	iupdate(ip);
 	iunlockput(ip);
-	end_op();
+	end_op(ip->dev);
 	return -1;
 }
 
@@ -212,14 +211,11 @@ sys_unlink(void)
 	if(argstr(0, &path) < 0)
 		return -1;
 
-	
-	begin_op();
-	if((dp = nameiparent(path, name)) == 0){
-		end_op();
+	if((dp = nameiparent_direct(path, name)) == 0){
 		seterr(EINOPARENT);
 		return -1;
 	}
-
+	begin_op(dp->dev);
 	ilock(dp);
 
 	// Cannot unlink "." or "..".
@@ -259,25 +255,27 @@ sys_unlink(void)
 	iupdate(ip);
 	iunlockput(ip);
 
-	end_op();
+	end_op(dp->dev);
 
 	return 0;
 
 bad:
 	iunlockput(dp);
-	end_op();
+	end_op(dp->dev);
 	return -1;
 }
 
 static struct inode*
-create(char *path, short type, short major, short minor)
+create(char *path, short type, short major, short minor, int beginop)
 {
 	uint off;
 	struct inode *ip, *dp;
 	char name[DIRSIZ];
 
-	if((dp = nameiparent(path, name)) == 0)
+	if((dp = nameiparent_direct(path, name)) == 0)
 		return 0;
+	if(beginop)
+		begin_op(dp->dev);
 	ilock(dp);
 
 	if((ip = dirlookup(dp, name, &off)) != 0){
@@ -338,6 +336,7 @@ canwrite(struct file *f, int omode)
 	return 0;
 }
 
+// this is a mess. begin_op and end_op need some work
 int
 sys_open(void)
 {
@@ -349,31 +348,29 @@ sys_open(void)
 	if(argstr(0, &path) < 0 || argint(1, &omode) < 0)
 		return -1;
 
-	begin_op();
-
 	if(omode & O_CREATE){
-		ip = create(path, T_FILE, 0, 0);
+		// for this branch the begin_op starts in create
+		ip = create(path, T_FILE, 0, 0, 1);
 		if(ip == 0){
-			end_op();
 			seterr(EICANTOPEN);
 			return -1;
 		}
 	} else {
-		if((ip = namei(path)) == 0){
-			end_op();
+		if((ip = namei_direct(path)) == 0){
 			seterr(EICANTFIND);
 			return -1;
 		}
+		begin_op(ip->dev);
 		ilock(ip);
 		if(checkinodeperm(ip, OP_OPEN)){
 			seterr(ESNOPERMS);
 			iunlockput(ip);
-			end_op();
+			end_op(ip->dev);
 			return -1;
 		}
 		if(ip->type == T_DIR && omode != O_RDONLY){
 			iunlockput(ip);
-			end_op();
+			end_op(ip->dev);
 			seterr(EIUNWRITE);
 			return -1;
 		}
@@ -383,12 +380,12 @@ sys_open(void)
 		if(f)
 			fileclose(f);
 		iunlockput(ip);
-		end_op();
+		end_op(ip->dev);
 		seterr(EIFSALLOC);
 		return -1;
 	}
 	iunlock(ip);
-	end_op();
+	end_op(ip->dev);
 
 	f->type = FD_INODE;
 	f->ip = ip;
@@ -404,14 +401,14 @@ sys_mkdir(void)
 	char *path;
 	struct inode *ip;
 
-	begin_op();
-	if(argstr(0, &path) < 0 || (ip = create(path, T_DIR, 0, 0)) == 0){
-		end_op();
+	if(argstr(0, &path) < 0 || (ip = create(path, T_DIR, 0, 0, 1)) == 0){
+		if(ip != nil)
+			end_op(ip->dev);
 		seterr(EINOCREATE);
 		return -1;
 	}
 	iunlockput(ip);
-	end_op();
+	end_op(ip->dev);
 	return 0;
 }
 
@@ -422,8 +419,7 @@ sys_mknod(void)
 	char *path;
 	int len;
 	int major, minor;
-	
-	begin_op();
+
 	if(proc->uid > -1){
 		seterr(ESNOPERMS);
 		return -1;
@@ -431,14 +427,15 @@ sys_mknod(void)
 	if((len=argstr(0, &path)) < 0 ||
 		 argint(1, &major) < 0 ||
 		 argint(2, &minor) < 0 ||
-		 (ip = create(path, T_DEV, major, minor)) == 0){
-		end_op();
+		 (ip = create(path, T_DEV, major, minor, 1)) == 0){
+		if(ip != nil)
+			end_op(ip->dev);
 		seterr(EINOCREATE);
 		return -1;
 	}
 	ip->perms = U_READ|U_WRITE;
 	iunlockput(ip);
-	end_op();
+	end_op(ip->dev);
 	return 0;
 }
 
@@ -448,22 +445,23 @@ sys_chdir(void)
 	char *path;
 	struct inode *ip;
 
-	begin_op();
-	if(argstr(0, &path) < 0 || (ip = namei(path)) == 0){
-		end_op();
+	if(argstr(0, &path) < 0 || (ip = namei_direct(path)) == 0){
+		if(ip != nil)
+			end_op(ip->dev);
 		seterr(EICANTFIND);
 		return -1;
 	}
+	begin_op(ip->dev);
 	ilock(ip);
 	if(ip->type != T_DIR){
 		iunlockput(ip);
-		end_op();
+		end_op(ip->dev);
 		seterr(EIBADTYPE);
 		return -1;
 	}
 	iunlock(ip);
 	iput(proc->cwd);
-	end_op();
+	end_op(ip->dev);
 	proc->cwd = ip;
 	return 0;
 }
@@ -540,12 +538,11 @@ sys_chperms(void)
 	
 	if(argstr(0, &fname) < 0 || argint(1, &rmode) < 0 || argint(2, &perms) < 0)
 		return -1;
-	begin_op();
-	if((ip = namei(fname)) == 0){
-		end_op();
+	if((ip = namei_direct(fname)) == 0){
 		seterr(EICANTFIND);
 		return -1;
 	}
+	begin_op(ip->dev);
 	ilock(ip);
 	switch(rmode){
 	case 0:
@@ -556,7 +553,7 @@ sys_chperms(void)
 		if(ip->owner != proc->uid && !singleuser && proc->uid != -1){
 			seterr(ESNOPERMS);
 			iunlockput(ip);
-			end_op();
+			end_op(ip->dev);
 			return -1;
 		}
 		ip->perms = (short)perms;
@@ -566,11 +563,11 @@ sys_chperms(void)
 		break;
 	default:
 		iunlockput(ip);
-		end_op();
+		end_op(ip->dev);
 		seterr(EKBADARG);
 		return -1;
 	}
-	end_op();
+	end_op(ip->dev);
 	return rval;
 }
 
