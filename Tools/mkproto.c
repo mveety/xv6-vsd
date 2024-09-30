@@ -45,6 +45,7 @@ enum {
 	KERNEL = 4,
 	BOOTLOADER = 5,
 	SYNC = 6,
+	FSYS_NOLOG = 7,
 	U_READ  =  (1<<0),
 	U_WRITE  =  (1<<1),
 	U_EXEC  =  (1<<2),
@@ -773,6 +774,8 @@ entrytype(Entry *e)
 	switch(e->type){
 	case FSYS:
 		return "fsys";
+	case FSYS_NOLOG:
+		return "fsys_nolog";
 	case DIRECT:
 		return "direct";
 	case EFILE:
@@ -796,6 +799,7 @@ printentrystring(Entry *e, int prefix)
 		dprintf(2, "mkproto: ");
 	switch(e->type){
 	case FSYS:
+	case FSYS_NOLOG:
 		dprintf(2, "%s %s %s %d\n", entrytype(e), e->name, e->source, e->size);
 		break;
 	case DIRECT:
@@ -837,6 +841,12 @@ doentry(Entry *e)
 		if(neuter)
 			return neuter_makefs(e->source, e->name, e->size, LOGSIZE, e->size/10);
 		return makefs(e->source, e->name, e->size, LOGSIZE, e->size/10);
+		break;
+	case FSYS_NOLOG:
+		e->active = 0;
+		if(neuter)
+			return neuter_makefs(e->source, e->name, e->size, 0, e->size/10);
+		return makefs(e->source, e->name, e->size, 0, e->size/10);
 		break;
 	case DIRECT:
 		searchdir = finddir(e->fs, e->home);
@@ -931,7 +941,7 @@ parseentrystring(char *line)
 		free(freeme);
 		return 0;
 	}
-	if(!strcmp(token, "fsys")){
+	if(!strcmp(token, "fsys") || !strcmp(token, "fsys_nolog")){
 		name = strsep_wrapper(&linedup, " \t");
 		source0 = strsep_wrapper(&linedup, " \t");
 		if(use_altfsfile)
@@ -946,7 +956,10 @@ parseentrystring(char *line)
 		if(!name || !source0 || !s_size)
 			goto fail;
 		size = (uint)strtoul(s_size, nil, 10);
-		ent = makeentry(nil, FSYS, name, "", source, size, 0, 0);
+		if(!strcmp(token, "fsys_nolog"))
+			ent = makeentry(nil, FSYS_NOLOG, name, "", source, size, 0, 0);
+		else
+			ent = makeentry(nil, FSYS, name, "", source, size, 0, 0);
 		active = doentry(ent);
 		addentry(ent);
 	} else if(!strcmp(token, "direct")) {

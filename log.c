@@ -43,6 +43,8 @@ initlog(uint dev)
 	sb = getsuperblock(dev);
 	log = getlog(dev);
 
+	if(sb->nlog == 0)
+		return;
 	initlock(&log->lock, "log");
 	log->start = sb->logstart;
 	log->size = sb->nlog;
@@ -129,6 +131,8 @@ begin_op(uint dev)
 	struct log *log;
 
 	log = getlog(dev);
+	if(log->size == 0)
+		return;
 	acquire(&log->lock);
 	while(1){
 		if(log->committing){
@@ -153,6 +157,8 @@ end_op(uint dev)
 	struct log *log;
 
 	log = getlog(dev);
+	if(log->size == 0)
+		return;
 	acquire(&log->lock);
 	log->outstanding -= 1;
 	if(log->committing)
@@ -226,6 +232,10 @@ log_write(struct buf *b)
 	struct log *log;
 
 	log = getlog(b->dev);
+	if(log->size == 0){
+		bwrite(b);
+		return;
+	}
 	if (log->lh.n >= LOGSIZE || log->lh.n >= log->size - 1)
 		panic("too big a transaction");
 	if (log->outstanding < 1)

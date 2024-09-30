@@ -14,7 +14,6 @@
 #include "proc.h"
 #include "x86.h"
 
-#define COM2 0x2F8
 #define MUXBUFMAX 64
 #define BACKSPACE 0x100
 

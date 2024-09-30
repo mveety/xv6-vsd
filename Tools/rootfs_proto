@@ -5,6 +5,7 @@ direct etc / -1 u:rwx w:rx
 direct dev / -1 u:rwx w:rx
 direct boot / -1 u:rwx w:rx
 direct test bin -1 u:rwx w:rx
+direct mnt / -1 u:rwx w:rx
 
 file etc rc @rc -1 u:rw w:r
 file etc devices @devices -1 u:rw w:r

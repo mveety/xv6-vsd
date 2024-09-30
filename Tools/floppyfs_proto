@@ -1,9 +1,12 @@
-fsys VSDBOOT floppy.img 2880
+fsys_nolog VSDBOOT floppy.img 2880
 
 direct bin / -1 u:rwx w:rx
 direct etc / -1 u:rwx w:rx
 direct dev / -1 u:rwx w:rx
 direct boot / -1 u:rwx w:rx
+direct mnt / -1 u:rwx w:rx
+direct newroot mnt -1 u:rwx w:rx
+direct install mnt -1 u:rwx w:rx
 
 file etc rc @rc -1 u:rw w:r
 file etc devices @devices -1 u:rw w:r
@@ -11,7 +14,7 @@ file etc passwd @passwd -1 u:rw w:r
 file etc motd @motd -1 u:rw w:r
 
 file boot kernel.elf kernel.elf -1 u:rw w:r
-file boot bootfloppy bootfloppy -1 u:rw w:r
+file boot bootelf bootelf -1 u:rw w:r
 
 file bin  cat   _cat -1 u:rx w:rx
 file bin  echo   _echo -1 u:rx w:rx
@@ -39,6 +42,6 @@ file bin  rfperms   _rfperms -1 u:rx w:rx
 file bin  chperms   _chperms -1 u:rx w:rx
 
 kernel kernel.elf
-boot bootfloppy
+boot bootelf
 
 sync

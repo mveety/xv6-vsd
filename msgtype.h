@@ -10,4 +10,3 @@
 #define MSGAUTH		4
 
 #endif
-
