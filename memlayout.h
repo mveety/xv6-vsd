@@ -1,6 +1,7 @@
 // Memory layout
 
 #define EXTMEM  0x100000            // Start of extended memory
+#define ISAHOLEEND 0x1000000	// isa hole end. e801 reports the start
 #define PHYSTOP 0xE000000           // Top physical memory
 #define DEVSPACE 0xFE000000         // Other devices are at high addresses
 

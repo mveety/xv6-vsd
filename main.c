@@ -9,6 +9,9 @@
 
 int singleuser;
 int booted;
+u32int lowmem;
+u32int highmem;
+u32int totalmem;
 static void startothers(void);
 static void mpmain(void)  __attribute__((noreturn));
 extern pde_t *kpgdir;
@@ -23,24 +26,27 @@ main(void)
 	char *p;
 	u16int *mem1;
 	u16int *mem2;
-	u32int lowmem;
-	u32int highmem;
-	u32int totalmem;
+	u32int allocmem1;
+	u32int curend;
 
 	mem1 = (void*)0x500;
 	mem2 = (void*)0x600;
-	lowmem = *mem1;
+	allocmem1 = lowmem = *mem1;
 	highmem = (*mem2)*64;
 	totalmem = lowmem+highmem;
+
 	singleuser = 1; // boot into single user mode initally
 	booted = 0;
 	syscons = 1; // cga/ega/vga is the system console
 	sysuart = 1; // make the uart initally print messages
+
 	cgamove(1, 0);
 	cgaprintstr("xv6...\n");
 	earlyuartprintstr("\nxv6...\n");
 	consoleinit1();   // I/O devices
 	kinit1(end, P2V(4*1024*1024)); // phys page allocator
+	allocmem1 -= 4*1024*1024;
+	curend = 4*1024*1024;
 	kvmalloc();      // kernel page table
 	cprintf("memory = %u kb (low = %u, high = %u)\n", totalmem, lowmem, highmem);
 	cprintf("starting vsd release 1\n");
@@ -61,7 +67,11 @@ main(void)
 		timerinit();   // uniprocessor timer
 	}
 	startothers();   // start other processors
-	kinit2(P2V(4*1024*1024), P2V(PHYSTOP)); // must come after startothers()
+	// free the memory so the kernel knows about it
+	if(allocmem1 > 0)
+		kinit2(P2V(curend), P2V(lowmem));
+	if(highmem > 0)
+		kinit2(P2V(ISAHOLEEND), P2V(highmem));
 	ideinit();       // disk
 	binit();         // buffer cache and /dev/disk*
 	fileinit();      // file tables
@@ -72,6 +82,7 @@ main(void)
 	kernelinit();	// kernel process
 	userinit();      // first user process
 	// Finish setting up this processor in mpmain.
+	cprintf("cpu%d: starting timesharing\n", cpu->id);
 	mpmain();
 }
 
@@ -89,7 +100,6 @@ mpenter(void)
 static void
 mpmain(void)
 {
-	cprintf("cpu%d: starting timesharing\n", cpu->id);
 	idtinit();       // load idt register
 	xchg(&cpu->started, 1); // tell startothers() we're up
 	scheduler();     // start running processes
