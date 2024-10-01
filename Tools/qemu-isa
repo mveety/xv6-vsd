@@ -1,24 +1,22 @@
 #!/bin/sh
 
 if [ "$#" != "1" ] ; then
-	CPUS=2
+	CPUS=1
 	MEM=256
 else
-	CPUS=$1
+	echo "only supports 1 cpu"
+	CPUS=1
 	MEM=256
 fi
 
 if [ "$#" != '2' ]; then
-	CPUS=2
+	CPUS=1
 	MEM=256
 else
-	CPUS=$1
+	echo "only supports 1 cpu"
+	CPUS=1
 	MEM=$2
 fi
 
 qemu-system-i386 -serial mon:stdio -hda fs.img -smp $CPUS,sockets=$CPUS -m $MEM \
-				-no-reboot -no-shutdown -d cpu_reset -S -s \
-				-chardev socket,id=mon0,telnet=on,server=on,port=7777,host=0.0.0.0 \
-				-mon mon0
-
-
+					-machine isapc -cpu 486

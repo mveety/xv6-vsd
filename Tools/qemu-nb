@@ -16,7 +16,7 @@ else
 	MEM=$2
 fi
 
-qemu-system-i386 -hda fs.img -smp $CPUS -m $MEM \
+qemu-system-i386 -hda fs.img -smp $CPUS,sockets=$CPUS -m $MEM \
 					-no-reboot -no-shutdown \
 					-serial mon:stdio
 

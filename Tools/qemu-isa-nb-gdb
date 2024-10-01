@@ -18,6 +18,6 @@ else
 	MEM=$2
 fi
 
-qemu-system-i386 -serial mon:stdio -hda fs.img -smp $CPUS -m $MEM \
+qemu-system-i386 -serial mon:stdio -hda fs.img -smp $CPUS,sockets=$CPUS -m $MEM \
 					-no-reboot -no-shutdown -d cpu_reset -S -s \
 					-machine isapc -cpu 486

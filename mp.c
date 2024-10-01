@@ -98,7 +98,7 @@ mpinit(void)
 	uchar *p, *e;
 	struct mp *mp;
 	struct mpconf *conf;
-	struct mpproc *proc;
+	struct mpproc *pp;
 	struct mpioapic *ioapic;
 
 	bcpu = &cpus[0];
@@ -108,13 +108,13 @@ mpinit(void)
 	}
 	ismp = 1;
 	lapic = (uint*)conf->lapicaddr;
-	for(p=(uchar*)(conf+1), e=(uchar*)conf+conf->length; p<e; ){
+	for(p=(uchar*)(conf+1), e=(uchar*)conf+conf->length; p<e;){
 		switch(*p){
 		case MPPROC:
-			proc = (struct mpproc*)p;
+			pp = (struct mpproc*)p;
 			if(ncpu < NCPU) {
 				// for reference: id == apicid in xv6 sources
-				cpus[ncpu].id = proc->apicid;  // apicid may differ from ncpu
+				cpus[ncpu].id = pp->apicid;  // apicid may differ from ncpu
 				ncpu++;
 			}
 			p += sizeof(struct mpproc);
@@ -134,7 +134,6 @@ mpinit(void)
 			break;
 		}
 	}
-
 	if(!ismp){
 		// Didn't like what we found; fall back to no MP.
 		cprintf("mpinit: ncpu=1 apicid=nil\n");
