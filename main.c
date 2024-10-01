@@ -21,7 +21,17 @@ int
 main(void)
 {
 	char *p;
+	u16int *mem1;
+	u16int *mem2;
+	u32int lowmem;
+	u32int highmem;
+	u32int totalmem;
 
+	mem1 = (void*)0x500;
+	mem2 = (void*)0x600;
+	lowmem = *mem1;
+	highmem = (*mem2)*64;
+	totalmem = lowmem+highmem;
 	singleuser = 1; // boot into single user mode initally
 	booted = 0;
 	syscons = 1; // cga/ega/vga is the system console
@@ -32,6 +42,7 @@ main(void)
 	consoleinit1();   // I/O devices
 	kinit1(end, P2V(4*1024*1024)); // phys page allocator
 	kvmalloc();      // kernel page table
+	cprintf("memory = %u kb (low = %u, high = %u)\n", totalmem, lowmem, highmem);
 	cprintf("starting vsd release 1\n");
 	mpinit();        // collect info about this machine
 	lapicinit();

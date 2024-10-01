@@ -11,6 +11,27 @@
 .globl start
 start:
   cli                         # BIOS enabled interrupts; disable
+# detect memory
+	xor %cx, %cx
+	xor %dx, %dx
+	movw $0xe801, %ax
+	int $0x15
+	jc memcont
+	testb $0x86, %ah
+	jc memcont
+	testb $0x80, %ah
+	jc memcont
+	jcxz memuseax
+	mov %cx, %ax
+	mov %dx, %bx
+memuseax:
+	mov %ax, %cx
+	mov %bx, %dx
+	movw $0x500, %bx
+	movw %cx, (%bx)
+	movw $0x600, %bx
+	movw %dx, (%bx)
+memcont:
 	movw    $0x8a00, %ax            # 0x8a00 -> port 0x8a00
 	movw    %ax, %dx
 	outw    %ax, %dx
