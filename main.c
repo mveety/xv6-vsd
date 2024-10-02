@@ -45,7 +45,7 @@ main(void)
 	cgaprintstr("xv6...\n");
 	earlyuartprintstr("\nxv6...\n");
 	cprintf("memory = %u kb\n", totalmem, lowmem, highmem);
-	cprintf("kernel end = %x\n",  end);
+	cprintf("kernel = %x (%u kb)\n",  end, ((uint)(end-KERNBASE))/1024);
 	consoleinit1();   // I/O devices
 	kinit1(end, P2V(4*1024*1024)); // phys page allocator
 	allocmem1 -= 4*1024*1024;
