@@ -34,4 +34,5 @@ kernel.bin
 kernel.elf
 .hg
 *.dsyms
+serial.txt
 

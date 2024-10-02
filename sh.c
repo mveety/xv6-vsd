@@ -201,7 +201,7 @@ main(int argc, char *argv[])
 		}
 	}
 	if(bootsh){ // this might be needed.
-		while((fd = open("/dev/bootcons", O_RDWR)) >= 0){
+		while((fd = open("/dev/syscons", O_RDWR)) >= 0){
 			if(fd >= 3){
 				close(fd);
 				break;

@@ -28,6 +28,7 @@ main(void)
 	u16int *mem2;
 	u32int allocmem1;
 	u32int curend;
+	u32int *kernstart;
 
 	mem1 = (void*)0x500;
 	mem2 = (void*)0x600;
@@ -40,15 +41,16 @@ main(void)
 	syscons = 1; // cga/ega/vga is the system console
 	sysuart = 1; // make the uart initally print messages
 
-	cgamove(1, 0);
+	cgamove(2, 0);
 	cgaprintstr("xv6...\n");
 	earlyuartprintstr("\nxv6...\n");
+	cprintf("memory = %u kb\n", totalmem, lowmem, highmem);
+	cprintf("kernel end = %x\n",  end);
 	consoleinit1();   // I/O devices
 	kinit1(end, P2V(4*1024*1024)); // phys page allocator
 	allocmem1 -= 4*1024*1024;
 	curend = 4*1024*1024;
 	kvmalloc();      // kernel page table
-	cprintf("memory = %u kb (low = %u, high = %u)\n", totalmem, lowmem, highmem);
 	cprintf("starting vsd release 1\n");
 	mpinit();        // collect info about this machine
 	lapicinit();

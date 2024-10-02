@@ -12,7 +12,7 @@ struct spinlock { // fake spinlock for fs.h
 #include "kbd.h"
 #include "fs.h"
 
-int cur_line, cur_col, stiter;
+int cur_line, cur_col, stiter, cur_line2, cur_col2;
 char *heap;
 uint hoffset;
 uint heaplen;
@@ -28,6 +28,11 @@ void smalloc_init(void*, uint);
 void *smalloc(uint);
 void uartinit(void);
 void uartputch(char c);
+void printint(int, int, int);
+void printstr(char*);
+void printint2(int, int, int);
+void printstr2(char*);
+
 
 void
 bootmain(void)
@@ -42,7 +47,7 @@ bootmain(void)
 	struct dinode *dn;
 	struct dinode *kinode;
 	uint *addrs;
-	uint i = 0,j = 0;
+	uint i = 0, j = 0, k = 0;
 	uint ksize;
 	uint kblks;
 	char *xptr;
@@ -56,16 +61,16 @@ bootmain(void)
 	uartinit();
 	cur_col = 0;
 	cur_line = 0;
+	cur_line2 = 1;
+	cur_col2 = 0;
 	stiter = 0;
 	smalloc_init((void*)0x700, 0x7e00);
 	for(i = 0; i < (80*25); i++)
 		vgaputch(' ');
 	cur_line = 0;
 	cur_col = 0;
-	putch(' ');putch(' ');
-	putch('v');putch('s');putch('d');putch('.');putch('e');putch('l');putch('f');
-	putch(' ');
-	putch('0');
+	printstr("  vsd.elf ");
+	vgaputch('0');
 	sb = smalloc(sizeof(struct superblock));
 	dn = smalloc(sizeof(struct dinode));
 	addrs = smalloc(512);
@@ -75,16 +80,16 @@ bootmain(void)
 		xptr[i] = '\0';
 
 // stage 1: get disk metadata (test for system and get kernel inode)
-	putch('\b');
-	putch('1');
+	vgaputch('\b');
+	vgaputch('1');
 	readsect(sb, 1);
 	if(!sb->system)
 		panic();
 	readsect(dn, ((sb->kerninode)/IPB + sb->inodestart));
 
 // stage 2: read the kernel inode
-	putch('\b');
-	putch('2');
+	vgaputch('\b');
+	vgaputch('2');
 	kinode = &dn[sb->kerninode%IPB];
 	ksize = kinode->size;
 	kblks = ksize/BSIZE;
@@ -99,8 +104,8 @@ bootmain(void)
 	}
 
 // stage 3: read the kernel
-	putch('\b');
-	putch('3');
+	vgaputch('\b');
+	vgaputch('3');
 	// have the kernel inode!
 	// now read the kernel
 	readfile(addrs, (void*)elf, ksize, 0);
@@ -109,13 +114,20 @@ bootmain(void)
 	}
 
 // stage 4: load kernel into memory
-	putch('\b');
-	putch('4');
+	vgaputch('\b');
+	vgaputch('4');
 	// great, all looks good. load the rest of it.
 	ph = (struct proghdr*)((uchar*)elf+elf->phoff);
 	eph = ph + elf->phnum;
-	for(; ph < eph; ph++, j++){
+	printstr2("kernel=");
+	for(k = 0; ph < eph; ph++, j++, k++){
 		printst();
+		if(ph->paddr != 0){
+			printint2((int)k, 10, 0);
+			printstr2(":");
+			printint2((int)ph->paddr, 16, 0);
+			printstr2(" ");
+		}
 		if(ph->memsz < 1){
 			if(j > 0)
 				break;
@@ -131,11 +143,10 @@ bootmain(void)
 				xptr[i] = (char)0;
 		}
 	}
-//	putch('!');
-//	panic();
+
 // stage 5: jump to the kernel
-	putch('\b');
-	putch('5');
+	vgaputch('\b');
+	vgaputch('5');
 	entry = (void(*)(void))(elf->entry);
 	entry();
 	putch('\b');
@@ -172,17 +183,17 @@ vgaputch(char c)
 		}
 		break;
 	}
-	if(cur_col == 25){
-		cur_line++;
+	if(cur_line == 25){
+		cur_line = 0;
 		cur_col = 0;
 	}
-	if(cur_line == 80){
+	if(cur_col == 80){
 		cur_line++;
 		cur_col = 0;
 	}
 	if(print){
 		// calculate linear position 
-		linpos = (cur_line*25)+cur_col;
+		linpos = (cur_line*80)+cur_col;
 		cur = (void*)vga+(linpos*2);
 		pdat = (short)colour<<8;
 		pdat = pdat|(short)c;
@@ -353,4 +364,74 @@ uartputch(char c)
 	if(c == '\b')
 		c = 'H' - '@';
 	outb(COM1+0, c);
+}
+
+void
+printint(int xx, int base, int sign)
+{
+	static char digits[] = "0123456789abcdef";
+	char buf[16];
+	int i;
+	uint x;
+
+	if(sign && (sign = xx < 0))
+		x = -xx;
+	else
+		x = xx;
+
+	i = 0;
+	do{
+		buf[i++] = digits[x % base];
+	}while((x /= base) != 0);
+
+	if(sign)
+		buf[i++] = '-';
+
+	while(--i >= 0)
+		putch(buf[i]);
+}
+
+void
+printstr(char *str)
+{
+	char *s;
+
+	for(s = str; *s ; s++)
+		putch(*s);
+}
+
+void
+printint2(int xx, int base, int sign)
+{
+	int colsave, linesave;
+
+	colsave = cur_col;
+	linesave = cur_line;
+	cur_line = cur_line2;
+	cur_col = cur_col2;
+
+	printint(xx, base, sign);
+
+	cur_line2 = cur_line;
+	cur_col2 = cur_col;
+	cur_col = colsave;
+	cur_line = linesave;
+}
+
+void
+printstr2(char *str)
+{
+	int colsave, linesave;
+
+	colsave = cur_col;
+	linesave = cur_line;
+	cur_line = cur_line2;
+	cur_col = cur_col2;
+
+	printstr(str);
+
+	cur_line2 = cur_line;
+	cur_col2 = cur_col;
+	cur_col = colsave;
+	cur_line = linesave;
 }
