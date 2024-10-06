@@ -81,10 +81,10 @@ ideinit(void)
 	outb(0x1f6, 0xe0 | (0<<4));
 	devsw[6].read = ide_read;
 	devsw[6].write = ide_write;
-	diskid = register_disk(0, &iderw, nil);
+	diskid = register_disk(0, 0, &iderw, nil);
 	cprintf("cpu%d: ide: registered ide disk 0 as disk%d\n", cpu->id, diskid);
 	if(havedisk1){
-		diskid = register_disk(1, &iderw, nil);
+		diskid = register_disk(0, 1, &iderw, nil);
 		cprintf("cpu%d: ide: registered ide disk 0 as disk%d\n", cpu->id, diskid);
 	}
 }

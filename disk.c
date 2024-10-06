@@ -17,6 +17,7 @@
 struct disk {
 	u16int flags;
 	u16int driver_flags;
+	int type;
 	uint driver_device;
 	void (*diskrw)(struct buf*);
 	void *aux;
@@ -50,7 +51,7 @@ diskflags(uint devid)
 }
 
 uint
-register_disk(uint realdisk, void (*realrw)(struct buf*), void *aux)
+register_disk(int type, uint realdisk, void (*realrw)(struct buf*), void *aux)
 {
 	int i;
 
@@ -58,6 +59,7 @@ register_disk(uint realdisk, void (*realrw)(struct buf*), void *aux)
 		if(!(disks[i].flags & DRIVER_INUSE)){
 			disks[i].flags |= DRIVER_INUSE;
 			disks[i].driver_device = realdisk;
+			disks[i].type = type;
 			disks[i].diskrw = realrw;
 			disks[i].aux = aux;
 			return i;
@@ -65,6 +67,16 @@ register_disk(uint realdisk, void (*realrw)(struct buf*), void *aux)
 	// under normal use 0 will be allocated already as the boot disk.
 	// if you get 0 it's an error.
 	return 0;
+}
+
+int
+disktype(uint devid)
+{
+	if(devid >= DISKMAX)
+		return -1;
+	if(!(disks[devid].flags & DRIVER_INUSE))
+		return -2;
+	return disks[devid].type;
 }
 
 void

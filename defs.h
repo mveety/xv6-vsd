@@ -272,7 +272,7 @@ uint realdisk(uint);
 // get and set driver specific flags
 u16int *diskflags(uint);
 // manage disks
-uint register_disk(uint, void (*realrw)(struct buf*), void*);
+uint register_disk(int, uint, void (*realrw)(struct buf*), void*);
 int unregister_disk(uint);
 // the method
 void diskrw(struct buf*);
@@ -285,6 +285,7 @@ int diskmounted(uint);
 struct inode *diskroot(uint);
 struct superblock *getsuperblock(uint);
 struct log *getlog(uint);
+int disktype(uint);
 
 
 // number of elements in fixed-size array
