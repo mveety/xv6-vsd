@@ -79,6 +79,7 @@ runcmd(struct cmd *cmd)
 	struct listcmd *lcmd;
 	struct pipecmd *pcmd;
 	struct redircmd *rcmd;
+	char *path;
 
 	if(cmd == 0){
 		exit();
@@ -94,8 +95,9 @@ runcmd(struct cmd *cmd)
 		ecmd = (struct execcmd*)cmd;
 		if(ecmd->argv[0] == 0)
 			exit();
-		exec(addpath(ecmd->argv[0]), ecmd->argv);
-		printf(2, "exec %s failed: %r\n", ecmd->argv[0]);
+		path = addpath(ecmd->argv[0]);
+		exec(path, ecmd->argv);
+		printf(2, "exec %s (%s) failed: %r\n", ecmd->argv[0], path);
 		break;
 
 	case REDIR:

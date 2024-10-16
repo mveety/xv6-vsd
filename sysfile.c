@@ -474,6 +474,7 @@ sys_exec(void)
 	uint uargv, uarg;
 
 	if(argstr(0, &path) < 0 || argint(1, (int*)&uargv) < 0){
+		seterr(ESCBADARGS);
 		return -1;
 	}
 	memset(argv, 0, sizeof(argv));

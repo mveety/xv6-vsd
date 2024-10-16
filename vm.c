@@ -131,15 +131,19 @@ setupkvm(void)
 	pde_t *pgdir;
 	struct kmap *k;
 
-	if((pgdir = (pde_t*)kalloc()) == 0)
+	if((pgdir = (pde_t*)kalloc()) == 0){
+		cprintf("cpu%d: setupkvm: kalloc failed\n", cpu->id);
 		return 0;
+	}
 	memset(pgdir, 0, PGSIZE);
 	if (p2v(PHYSTOP) > (void*)DEVSPACE)
 		panic("PHYSTOP too high");
 	for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
 		if(mappages(pgdir, k->virt, k->phys_end - k->phys_start, 
-								(uint)k->phys_start, k->perm) < 0)
+								(uint)k->phys_start, k->perm) < 0){
+			cprintf("cpu%d: setupkvm: mappages failed\n", cpu->id);
 			return 0;
+		}
 	return pgdir;
 }
 

@@ -17,6 +17,9 @@
 #define EKNOMEM "system is out of memory"
 #define EKBADARG "unknown arguments given to system call"
 #define EKDISABLED "system call is disabled"
+#define EKKVMFAIL "setupkvm() failed"
+#define EKBADUVMALLOC "allocuvm failed"
+#define EKBADUVMLOAD "loaduvm failed"
 
 // device errors
 #define EDNOTEXIST "the requested device does not exist"
@@ -42,6 +45,9 @@
 #define ESNOUSER "user does not exist"
 #define ES2001 "I'm sorry Dave"
 
+// general syscalls
+#define ESCBADARGS "Missing or malformed syscall arguments"
+
 // proc syscalls
 #define EPFORKNP "no free processes"
 #define EPCLONENP "no free processes"
@@ -55,6 +61,10 @@
 #define EPTHREADEXEC "threads are unable to exec"
 #define EPNOTHREADS "threading is disabled"
 #define EP2MANYT "parent has maximum number of child threads"
+#define EPBADMAGIC "not an executable"
+#define EPBADHEADERREAD "bad header read"
+#define EPFILETOOBIG "elf memsz < filesz"
+#define EPTOOMANYARGS "argv is more than MAXARG"
 
 // io syscalls
 #define EILNDIR "cannot make links of directories"
@@ -74,7 +84,7 @@
 #define EICANTOPEN "cannot open file"
 #define EICANTFIND "cannot find file"
 #define EINOCREATE "cannot create file"
-#define	EINOUNLINK "cannot unlink file"
+#define EINOUNLINK "cannot unlink file"
 #define EINOLINK "cannot link file"
 #define EIDIRFULL "directory not empty"
 #define EIBADTYPE "file is the wrong type"
