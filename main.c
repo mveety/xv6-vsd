@@ -32,8 +32,8 @@ main(void)
 
 	mem1 = (void*)0x500;
 	mem2 = (void*)0x600;
-	allocmem1 = lowmem = *mem1;
-	highmem = (*mem2)*64;
+	allocmem1 = lowmem = (*mem1)*1024;
+	highmem = (*mem2)*(64*1024);
 	totalmem = lowmem+highmem;
 
 	singleuser = 1; // boot into single user mode initally
@@ -44,12 +44,14 @@ main(void)
 	cgamove(2, 0);
 	cgaprintstr("xv6...\n");
 	earlyuartprintstr("\nxv6...\n");
-	cprintf("memory = %u kb\n", totalmem, lowmem, highmem);
-	cprintf("kernel = %x (%u kb)\n",  end, ((uint)(end-KERNBASE))/1024);
+	cprintf("memory = %u bytes (low = %x, high = %x)\n", totalmem, lowmem, highmem);
+	cprintf("kernel = %x (%u kb)\n",  V2P(end), ((uint)(end-KERNBASE))/1024);
+	if(lowmem < 4*1024*1024)
+		panic("not enough memory!");
 	consoleinit1();   // I/O devices
 	kinit1(end, P2V(4*1024*1024)); // phys page allocator
 	allocmem1 -= 4*1024*1024;
-	curend = 4*1024*1024;
+	//curend = 4*1024*1024;
 	kvmalloc();      // kernel page table
 	cprintf("starting vsd release 1\n");
 	mpinit();        // collect info about this machine
@@ -70,10 +72,20 @@ main(void)
 	}
 	startothers();   // start other processors
 	// free the memory so the kernel knows about it
-	if(allocmem1 > 0)
-		kinit2(P2V(curend), P2V(lowmem));
-	if(highmem > 0)
-		kinit2(P2V(ISAHOLEEND), P2V(highmem));
+	if(allocmem1 > 0){
+		kinit2(P2V(4*1024*1024), P2V(lowmem));
+		cprintf("cpu%d: low start = %x, low end = %x\n", cpu->id, 4*1024*1024, lowmem);
+	}
+	if(highmem > 0){
+		if(highmem > PHYSTOP){
+			kinit2(P2V(ISAHOLEEND), P2V(PHYSTOP));
+			cprintf("cpu%d: warning: highmem > PHYSTOP\n", cpu->id);
+			cprintf("cpu%d: high start = %x, high end = %x\n", cpu->id, ISAHOLEEND, PHYSTOP);
+		} else {
+			kinit2(P2V(ISAHOLEEND), P2V(highmem));
+			cprintf("cpu%d: high start = %x, high end = %x\n", cpu->id, ISAHOLEEND, highmem);
+		}
+	}
 	ideinit();       // disk
 	binit();         // buffer cache and /dev/disk*
 	fileinit();      // file tables
