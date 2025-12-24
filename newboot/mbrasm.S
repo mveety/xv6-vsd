@@ -27,10 +27,17 @@ start:
 memuseax:
 	mov %ax, %cx
 	mov %bx, %dx
+save_data: # save memory info and some things from the BDA
 	movw $0x500, %bx
 	movw %cx, (%bx)
-	movw $0x600, %bx
+	movw $0x504, %bx
 	movw %dx, (%bx)
+	# COM1 addr
+    movw (0x400),%ax
+	movw %ax, (0x508)
+	# COM2 addr
+    movw (0x402),%ax
+	movw %ax, (0x50c)
 memcont:
 	movw    $0x8a00, %ax            # 0x8a00 -> port 0x8a00
 	movw    %ax, %dx

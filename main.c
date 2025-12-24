@@ -26,12 +26,16 @@ main(void)
 	char *p;
 	u16int *mem1;
 	u16int *mem2;
+	u16int *com1port;
+	u16int *com2port;
 	u32int allocmem1;
 	u32int curend;
 	u32int *kernstart;
 
 	mem1 = (void*)0x500;
-	mem2 = (void*)0x600;
+	mem2 = (void*)0x504;
+	com1port = (void*)0x508;
+	com2port = (void*)0x50c;
 	allocmem1 = lowmem = (*mem1)*1024;
 	highmem = (*mem2)*(64*1024);
 	totalmem = lowmem+highmem;
@@ -46,6 +50,7 @@ main(void)
 	earlyuartprintstr("\nxv6...\n");
 	cprintf("memory = %u bytes (low = %x, high = %x)\n", totalmem, lowmem, highmem);
 	cprintf("kernel = %x (%u kb)\n",  V2P(end), ((uint)(end-KERNBASE))/1024);
+	cprintf("serial = com0 = %x, com1 = %x\n", *com1port, *com2port);
 	if(lowmem < 4*1024*1024)
 		panic("not enough memory!");
 	consoleinit1();   // I/O devices
