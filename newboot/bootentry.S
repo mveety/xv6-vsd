@@ -8,7 +8,7 @@ _start = V2P_WO(bootelf_entry)
 
 .globl bootelf_entry
 bootelf_entry:
-	mov $0x700000,%esp // just where ever
+	mov $0x70000,%esp // just where ever
 	mov $bootmain, %eax
 	jmp *%eax
 ohshit:

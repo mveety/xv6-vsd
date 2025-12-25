@@ -15,7 +15,7 @@ typedef struct Message Message;
 #define INPUT_BUF 128
 struct inputbuf {
 	char buf[INPUT_BUF];
-	void (*iputc)(int);
+	void (*iputc)(int, int);
 	uint r;  // Read index
 	uint w;  // Write index
 	uint e;  // Edit index
@@ -35,10 +35,10 @@ void            bwrite(struct buf*);
 void            consoleinit1(void);
 void            consoleinit2(void);
 void            cprintf(char*, ...);
-void            consoleintr(int(*)(void), struct inputbuf*);
+void            consoleintr(int(*)(int), struct inputbuf*, int);
 void            panic(char*) __attribute__((noreturn));
 void			cgamove(int, int);
-void			cgaputc(int);
+void			cgaputc(int, int);
 void			cgaprintstr(char*);
 
 // exec.c
@@ -216,9 +216,10 @@ extern struct spinlock tickslock;
 // uart.c
 void		earlyuartputc(char);
 void		earlyuartprintstr(char*);
-void            uartinit(void);
-void            uartintr(void);
-void            uartputc(int);
+void            uartinit(u16int);
+void            uartintr(int);
+void            uartputc(int, int);
+void			sysuartputc(int);
 
 // vm.c
 void            seginit(void);

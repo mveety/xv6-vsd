@@ -5,8 +5,14 @@
 
 extern struct inputbuf input;
 
+void*
+kunused(void *x)
+{
+	return x;
+}
+
 int
-kbdgetc(void)
+kbdgetc(int aux)
 {
 	static uint shift;
 	static uchar *charcode[4] = {
@@ -14,6 +20,7 @@ kbdgetc(void)
 	};
 	uint st, data, c;
 
+	kunused(&aux);
 	st = inb(KBSTATP);
 	if((st & KBS_DIB) == 0)
 		return -1;
@@ -48,5 +55,5 @@ kbdgetc(void)
 void
 kbdintr(void)
 {
-	consoleintr(kbdgetc, &input);
+	consoleintr(kbdgetc, &input, 0);
 }

@@ -104,6 +104,7 @@ mpinit(void)
 	bcpu = &cpus[0];
 	if((conf = mpconfig(&mp)) == 0){
 		cprintf("mpinit: no smp\n");
+		lapic = nil;
 		return;
 	}
 	ismp = 1;

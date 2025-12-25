@@ -146,11 +146,18 @@ cgamove(int row, int col)
 	outb(CRTPORT+1, (u8int)((pos>>8)&0xff));
 }
 
+void*
+cunused(void *x)
+{
+	return x;
+}
+
 void
-cgaputc(int c)
+cgaputc(int addr, int c)
 {
 	int pos;
 	
+	cunused(&addr);
 	// Cursor position: col + 80*row.
 	outb(CRTPORT, 14);
 	pos = inb(CRTPORT+1) << 8;
@@ -188,14 +195,14 @@ cgaprintstr(char *c)
 	char *p;
 
 	for(p = c; *p; p++)
-		cgaputc(*p);
+		cgaputc(0, *p);
 }
 
 void
 _uartputc(int c)
 {
 	if(uart)
-		uartputc(c);
+		sysuartputc(c);
 	else
 		earlyuartputc((char)c);
 }
@@ -215,18 +222,18 @@ consputc(int c)
 			_uartputc(c);
 	}
 	if(syscons)
-		cgaputc(c);
+		cgaputc(0, c);
 }
 
 #define C(x)  ((x)-'@')  // Control-x
 
 void
-consoleintr(int (*getc)(void), struct inputbuf* ibuf)
+consoleintr(int (*getc)(int), struct inputbuf* ibuf, int aux)
 {
 	int c, doprocdump = 0;
 
 	acquire(&cons.lock);
-	while((c = getc()) >= 0){
+	while((c = getc(aux)) >= 0){
 		switch(c){
 		case C('P'):  // Process listing.
 			doprocdump = 1;   // procdump() locks cons.lock indirectly; invoke later
@@ -235,21 +242,21 @@ consoleintr(int (*getc)(void), struct inputbuf* ibuf)
 			while(ibuf->e != ibuf->w &&
 						ibuf->buf[(ibuf->e-1) % INPUT_BUF] != '\n'){
 				ibuf->e--;
-				ibuf->iputc(BACKSPACE);
+				ibuf->iputc(aux, BACKSPACE);
 			}
 			break;
 		case C('H'):  // also backspace
 		case '\x7f':  // Backspace
 			if(ibuf->e != ibuf->w){
 				ibuf->e--;
-				ibuf->iputc(BACKSPACE);
+				ibuf->iputc(aux, BACKSPACE);
 			}
 			break;
 		default:
 			if(c != 0 && ibuf->e-ibuf->r < INPUT_BUF){
 				c = (c == '\r') ? '\n' : c;
 				ibuf->buf[ibuf->e++ % INPUT_BUF] = c;
-				ibuf->iputc(c);
+				ibuf->iputc(aux, c);
 				if(c == '\n' || c == C('D') || ibuf->e == ibuf->r+INPUT_BUF){
 					ibuf->w = ibuf->e;
 					wakeup(&ibuf->r);
@@ -317,7 +324,7 @@ consolewrite(struct inode *ip, char *buf, int n, int off)
 		if(ip->minor == 1)
 			consputc(buf[i] & 0xff);
 		else if(ip->minor == 2)
-			cgaputc(buf[i] & 0xff);
+			cgaputc(0, buf[i] & 0xff);
 	}
 	release(&cons.lock);
 	ilock(ip);

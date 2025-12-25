@@ -67,11 +67,11 @@ trap(struct trapframe *tf)
 		lapiceoi();
 		break;
 	case T_IRQ0 + IRQ_COM1:
-		uartintr();
+		uartintr(0);
 		lapiceoi();
 		break;
 	case T_IRQ0 + IRQ_COM2:
-		muxintr();
+		uartintr(1);
 		lapiceoi();
 		break;
 	case T_IRQ0 + 7:

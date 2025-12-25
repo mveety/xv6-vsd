@@ -9,6 +9,7 @@ zero 2 1
 robpike 2 2
 sysctl 3 0
 uart0 4 0
+uart1 4 1
 sysname 5 0
 rdisk0 6 0
 disk0 7 0

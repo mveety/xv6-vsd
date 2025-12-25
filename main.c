@@ -26,16 +26,20 @@ main(void)
 	char *p;
 	u16int *mem1;
 	u16int *mem2;
-	u16int *com1port;
-	u16int *com2port;
+	u16int *com1;
+	u16int com1port;
+	u16int *com2;
+	u16int com2port;
 	u32int allocmem1;
 	u32int curend;
 	u32int *kernstart;
 
 	mem1 = (void*)0x500;
 	mem2 = (void*)0x504;
-	com1port = (void*)0x508;
-	com2port = (void*)0x50c;
+	com1 = (void*)0x508;
+	com1port = *com1;
+	com2 = (void*)0x50c;
+	com2port = *com2;
 	allocmem1 = lowmem = (*mem1)*1024;
 	highmem = (*mem2)*(64*1024);
 	totalmem = lowmem+highmem;
@@ -50,12 +54,21 @@ main(void)
 	earlyuartprintstr("\nxv6...\n");
 	cprintf("memory = %u bytes (low = %x, high = %x)\n", totalmem, lowmem, highmem);
 	cprintf("kernel = %x (%u kb)\n",  V2P(end), ((uint)(end-KERNBASE))/1024);
-	cprintf("serial = com0 = %x, com1 = %x\n", *com1port, *com2port);
-	if(lowmem < 4*1024*1024)
-		panic("not enough memory!");
+	cprintf("serial = com0 = %x, com1 = %x\n", com1port, com2port);
+	if(lowmem < 0x3e0000){ // found experimentally. you basically need 6 meg
+		cli();
+		cprintf("panic: not enough memory!");
+		for(;;) ;
+	}
 	consoleinit1();   // I/O devices
-	kinit1(end, P2V(4*1024*1024)); // phys page allocator
-	allocmem1 -= 4*1024*1024;
+	if(lowmem > 4*1024*1024){
+		kinit1(end, P2V(4*1024*1024)); // phys page allocator
+		allocmem1 -= 4*1024*1024;
+	} else {
+		cprintf("warning: low memory (%x < %x)\n", lowmem, 4*1024*1024);
+		kinit1(end, P2V(lowmem));
+		allocmem1 = 0;
+	}
 	//curend = 4*1024*1024;
 	kvmalloc();      // kernel page table
 	cprintf("starting vsd release 1\n");
@@ -68,7 +81,10 @@ main(void)
 	picinit();       // interrupt controller
 	ioapicinit();    // another interrupt controller
 	consoleinit2();   // I/O device's interrupts
-	uartinit();      // serial port
+	if(com1port > 0) // serial devices
+		uartinit(com1port);
+	if(com2port > 0)
+		uartinit(com2port);
 	pinit();         // process table
 	tvinit();        // trap vectors
 	if(!ismp){
@@ -97,7 +113,6 @@ main(void)
 	bitbucket_init(); // /dev/null, /dev/zero, /dev/robpike devices
 	sysctl_init();  // /dev/sysctl
 	sysname_init(); // /dev/sysname
-	muxinit();		// /dev/mux*
 	kernelinit();	// kernel process
 	userinit();      // first user process
 	// Finish setting up this processor in mpmain.
