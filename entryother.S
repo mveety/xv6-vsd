@@ -49,13 +49,15 @@ start32:
   movw    %ax, %fs
   movw    %ax, %gs
 
-  # Turn on page size extension for 4Mbyte pages
-  movl    %cr4, %eax
-  orl     $(CR4_PSE), %eax
-  movl    %eax, %cr4
+#  # Turn on page size extension for 4Mbyte pages
+#  movl    %cr4, %eax
+#  orl     $(CR4_PSE), %eax
+#  movl    %eax, %cr4
+
   # Use enterpgdir as our initial page table
   movl    (start-12), %eax
   movl    %eax, %cr3
+
   # Turn on paging.
   movl    %cr0, %eax
   orl     $(CR0_PE|CR0_PG|CR0_WP), %eax

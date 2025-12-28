@@ -40,9 +40,24 @@ _start = V2P_WO(entry)
 .globl entry
 entry:
   # Turn on page size extension for 4Mbyte pages
-  movl    %cr4, %eax
-  orl     $(CR4_PSE), %eax
-  movl    %eax, %cr4
+  #movl    %cr4, %eax
+  #orl     $(CR4_PSE), %eax
+  #movl    %eax, %cr4
+  #mov $setuppgdir, %eax
+  #call *%eax
+	#movl %cr4, %eax
+	#andl $(~CR4_PSE), %eax
+	#movl %eax, %cr4
+	movl $(V2P_WO(entrypgtable1)), %eax
+	andl $0xfffff000, %eax
+	orl $PTE_P, %eax
+	orl $PTE_W, %eax
+	movl %eax, V2P_WO(entrypgdir)
+	movl $(V2P_WO(entrypgtable2)), %eax
+	andl $0xfffff000, %eax
+	orl $PTE_P, %eax
+	orl $PTE_W, %eax
+	movl %eax, (V2P_WO(entrypgdir)+0x800)
   # Set page directory
   movl    $(V2P_WO(entrypgdir)), %eax
   movl    %eax, %cr3

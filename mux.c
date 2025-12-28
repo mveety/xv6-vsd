@@ -73,8 +73,8 @@ muxinit(void)
 		lines[i].st = i;
 		initlock(&lines[i].lock, "mux line lock");
 	}
-	devsw[8].read = &muxread;
-	devsw[8].write = &muxwrite;
+//	devsw[8].read = &muxread;
+//	devsw[8].write = &muxwrite;
 	inb(COM2+2);
 	inb(COM2+0);
 	picenable(IRQ_COM2);

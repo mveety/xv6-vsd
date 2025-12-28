@@ -2,6 +2,7 @@
 
 #include "types.h"
 #include "defs.h"
+#include "date.h"
 #include "param.h"
 #include "errstr.h"
 #include "traps.h"
@@ -17,6 +18,7 @@
 
 struct spinlock sysctl_lock;
 struct spinlock sysname_lock;
+struct spinlock systime_lock;
 
 // some of the sysctls (other than sysuart and singleuser)
 int halted = 0;
@@ -27,10 +29,14 @@ int allowthreads = 1;
 int useclone = 1;
 int msgnote = 0;
 
+struct rtcdate boottime;
+
 int sysctl_write(struct inode*, char*, int, int);
 int sysctl_read(struct inode*, char*, int, int);
 int sysname_read(struct inode*, char*, int, int);
 int sysname_write(struct inode*, char*, int, int);
+int systime_read(struct inode*, char*, int, int);
+int systime_write(struct inode*, char*, int, int);
 
 int startdrv(char*);
 void reboot(void);
@@ -53,6 +59,16 @@ sysname_init(void)
 	safestrcpy(sysname, "amnesiac", 255);
 	devsw[5].write = &sysname_write;
 	devsw[5].read = &sysname_read;
+	cmostime(&boottime);
+}
+
+void
+systime_init(void)
+{
+	cprintf("cpu%d: system: starting clock\n", cpu->id);
+	initlock(&systime_lock, "systime lock");
+	devsw[8].write = &systime_write;
+	devsw[8].read = &systime_read;
 }
 
 #define scmsgsz 15
@@ -324,5 +340,30 @@ shutdown(int op)
 		for(;;)
 			hlt();
 	}
+}
+
+int
+systime_write(struct inode *ip, char *bf, int nbytes, int off)
+{
+	seterr(EDNOWRITE);
+	return -1;
+}
+
+int
+systime_read(struct inode *ip, char *bf, int nbytes, int off)
+{
+	seterr(EDNOREAD);
+	return -1;
+//	uint xticks;
+//	struct rtcdate curtime;
+//	u64int unixtime = 0;
+//	u64int jan12000 = 946684800;
+//
+//	xticks = ticks;
+//	cmostime(&curtime);
+//	unixtime += curtime.second;
+//	unixtime += (curtime.minute)*(60);
+//	unixtime += (curtime.hour)*(60*60);
+//	unixtime += (curtime.day)*(24*60*60);
 }
 

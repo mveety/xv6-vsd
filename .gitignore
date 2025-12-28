@@ -35,4 +35,5 @@ kernel.elf
 .hg
 *.dsyms
 serial.txt
+Work/*
 
