@@ -43,5 +43,6 @@ file bin  chperms   _chperms -1 u:rx w:rx
 
 kernel kernel.elf
 boot bootelf
+mbr vsdmbr
 
 sync

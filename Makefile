@@ -228,14 +228,12 @@ oldfs.img: mkfs_vsd $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
 
 newfs.img: mkproto $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
 	./mkproto -f Tools/rootfs_proto -o newfs.img
-	dd if=vsdmbr of=newfs.img conv=notrunc
 
 fs.img: $(FSFILE)
 	cp $(FSFILE) fs.img
 
 fs10mb.img: mkproto $(UPROGS) kernel.elf kernel.bin bootelf bootbin vsdmbr
 	./mkproto -f Tools/rootfs_10mb_proto -o fs10mb.img
-	dd if=vsdmbr of=fs10mb.img conv=notrunc
 
 fs.qcow: fs.img
 	qemu-img convert -O qcow2 fs.img fs.qcow

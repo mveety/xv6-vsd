@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <ctype.h>
+#include <errno.h>
 
 // because log is included in fs.h
 struct spinlock {
@@ -31,6 +32,8 @@ struct spinlock {
 #define etcperms U_READ|U_WRITE|W_READ
 #define dirperms U_READ|U_EXEC|W_READ|W_EXEC
 
+#define MBRSIZE 512
+
 typedef enum EntryType EntryType;
 typedef struct Dir Dir;
 typedef struct File File;
@@ -46,6 +49,7 @@ enum {
 	BOOTLOADER = 5,
 	SYNC = 6,
 	FSYS_NOLOG = 7,
+	MBR = 8,
 	U_READ  =  (1<<0),
 	U_WRITE  =  (1<<1),
 	U_EXEC  =  (1<<2),
@@ -69,6 +73,7 @@ struct Fs {
 	File *files;
 	File *bootloader;
 	File *kernel;
+	int have_mbr;
 };
 
 struct Dir {
@@ -125,6 +130,7 @@ int kernino;
 uint blocks_used;
 char *altfsfile;
 char *altsize;
+int fshavembr;
 
 void*
 emallocz(size_t size)
@@ -509,6 +515,7 @@ neuter_makefs(char *file, char *label, uint size, uint logsize, uint inodes)
 
 	newfs = emallocz(sizeof(Fs));
 	newfs->label = strdup(label);
+	newfs->have_mbr = 0;
 	
 	return newfs;
 }
@@ -561,6 +568,7 @@ makefs(char *file, char *label, uint size, uint logsize, uint ninodes)
 	newfs->freeinode = 1;
 	newfs->size = size;
 	newfs->label = newfs->sb.label;
+	newfs->have_mbr = 0;
 
 	// reserve used blocks
 	for(i = 0; i < nmeta; i++)
@@ -734,6 +742,44 @@ bootbrand(File *bootloader)
 	bootino = bootloader->ino;
 }
 
+void
+writembr(Fs *fs, char *file)
+{
+	int srcfd = 0;
+	u8int buf[MBRSIZE];
+	off_t fsize = 0;
+	ssize_t nread = 0;
+	ssize_t nwrote = 0;
+
+	if((srcfd = open(file, O_RDONLY)) < 0){
+		perror("open");
+		exit(1);
+	}
+	fsize = lseek(srcfd, 0, SEEK_END);
+	if(fsize != MBRSIZE){
+		dprintf(2, "error: %s: size invalid: %lu bytes\n", file, fsize);
+		exit(1);
+	}
+	if((nread = pread(srcfd, &buf[0], MBRSIZE, 0)) < MBRSIZE){
+		if(nread < 0)
+			dprintf(2, "error: %s: unable to read (errno = %d)\n", file, errno);
+		else
+			dprintf(2, "error: %s: unable to read. (read %ld, need %d)\n",
+				file, nread, MBRSIZE);
+		exit(1);
+	}
+	if(!(buf[MBRSIZE-2] == 0x55 && buf[MBRSIZE-1] == 0xaa)){
+		dprintf(2, "error: %s: mbr is not signed!\n", file);
+		exit(1);
+	}
+	if((nwrote = pwrite(fs->fd, &buf[0], MBRSIZE, 0)) < MBRSIZE){
+		dprintf(2, "error: %s: unable to write mbr to fs %s\n", file, fs->label);
+		exit(1);
+	}
+	fshavembr = 1;
+	close(srcfd);
+}
+
 Entry*
 makeentry(Fs *fs, int type, char *name, char *home, char *source, uint size,
 			int owner, short perms)
@@ -786,6 +832,8 @@ entrytype(Entry *e)
 		return "boot";
 	case SYNC:
 		return "sync";
+	case MBR:
+		return "mbr";
 	}
 	return "unknown";
 }
@@ -816,6 +864,9 @@ printentrystring(Entry *e, int prefix)
 		break;
 	case SYNC:
 		dprintf(2, "%s: %s\n", e->fs->label, entrytype(e));
+		break;
+	case MBR:
+		dprintf(2, "%s: %s %s\n", e->fs->label, entrytype(e), e->name);
 		break;
 	default:
 		dprintf(2, "unknown type %d\n", e->type);
@@ -883,6 +934,11 @@ doentry(Entry *e)
 	case SYNC:
 		syncfs(e->fs);
 		closefs(e->fs);
+		break;
+	case MBR:
+		if(!neuter)
+			writembr(e->fs, e->source);
+		fshavembr = 1;
 		break;
 	default:
 		dprintf(2, "mkproto: unknown entry type %d\n", e->type);
@@ -1002,6 +1058,12 @@ parseentrystring(char *line)
 	} else if(!strcmp(token, "sync")) {
 		ent = makeentry(active, SYNC, "", "", "", 0, 0, 0);
 		addentry(ent);
+	} else if(!strcmp(token, "mbr")) {
+		name = strsep_wrapper(&linedup, " \t");
+		if(!name)
+			goto fail;
+		ent = makeentry(active, MBR, "MBR", "", name, 0, 0, 0);
+		addentry(ent);
 	} else {
 		dprintf(2, "mkproto: unknown entry type \"%s\"\n", token);
 	}
@@ -1033,6 +1095,8 @@ runentries(Entry *ents)
 			dprintf(2, "mkproto: kernel is inode %u\n", kernino);
 		if(fsbootable)
 			dprintf(2, "mkproto: fs bootable. bootloader is inode %u\n", bootino);
+		if(!fshavembr && fsbootable)
+			dprintf(2, "warning: fs is bootable but does not have an MBR\n");
 		dprintf(2, "mkproto: first %u blocks have been allocated\n", blocks_used);
 	}
 }
@@ -1071,6 +1135,7 @@ main(int argc, char *argv[])
 	kernbrand = 0;
 	use_altfsfile = 0;
 	use_altsize = 0;
+	fshavembr = 0;
 
 	while((ch = getopt(argc, argv, "dvncf:o:s:")) != -1){
 		switch(ch){
