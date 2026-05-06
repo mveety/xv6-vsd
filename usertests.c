@@ -1786,7 +1786,7 @@ fsfull()
 			total += cc;
 			fsblocks++;
 		}
-		printf(1, "wrote %d bytes\n", total);
+		printf(1, "wrote %d bytes (%d blocks)\n", total, fsblocks);
 		close(fd);
 		if(total == 0)
 			break;

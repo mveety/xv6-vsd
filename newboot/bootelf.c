@@ -14,8 +14,8 @@ struct spinlock { // fake spinlock for fs.h
 
 int cur_line, cur_col, stiter, cur_line2, cur_col2;
 char *heap;
-uint hoffset;
-uint heaplen;
+volatile uint hoffset;
+volatile uint heaplen;
 extern void elfmain(void);
 void vgaputch(char);
 void putch(char);
@@ -37,6 +37,7 @@ void printstr2(char*);
 void
 bootmain(void)
 {
+	int topstack;
 	// from bootmain.c
 	struct elfhdr *elf;
 	struct proghdr *ph, *eph;
@@ -319,6 +320,7 @@ smalloc_init(void *h, uint len)
 	heap = h;
 	for(i = 0; i < heaplen; i++)
 		heap[i] = (char)0;
+	heaplen = len;
 }
 
 void*
